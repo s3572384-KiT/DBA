@@ -212,7 +212,7 @@ public class Derby {
         }
     }
 
-    private static void createAndInsert(String table, String[] sql, Connection conn, Statement state) {
+    private static void createAndInsert(Connection conn, Statement state, String table, String[] sql) {
         String createSql = sql[0];
         String insertSql = sql[1];
         String querySql = sql[2];
@@ -280,20 +280,16 @@ public class Derby {
             for (int i = 0; i < number; i++) {
                 table = TABLES[i];
                 sql = SQL_LIST[i];
-
-                createAndInsert(table, sql, conn, state);
-
-                // delete the table
-                state.execute("drop table " + table);
-                System.out.println("Dropped table " + table);
-
-                /*
-                   We commit the transaction. Any changes will be persisted to
-                   the database now.
-                 */
-                conn.commit();
-                System.out.println("Committed the transaction");
+                createAndInsert(conn, state, table, sql);
             }
+            // delete the table
+            for (String s : TABLES) {
+                state.execute("drop table " + s);
+                System.out.println("Dropped table " + s);
+            }
+//            commit the transaction. Any changes will be persisted to the database now.
+            conn.commit();
+            System.out.println("Committed the transaction");
 
             System.out.println("Closed connection");
 
@@ -324,7 +320,7 @@ public class Derby {
     }
 
     static public void main(String... args) {
-        final String path = "/root/rmit/Pedestrian_Counting_System_-_Monthly__counts_per_hour_.csv";
+        final String path = "../count.csv";
         loadDate(path);
     }
 
