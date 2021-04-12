@@ -51,14 +51,14 @@ public class Derby {
 
         SENSOR_TABLE = "SENSOR";
         SENSOR_SQL = new String[]{
-                String.format("create table %s (id int not null, name varchar(40) not null, primary key (id))", SENSOR_TABLE),
+                String.format("create table if not exists %s (id int not null, name varchar(40) not null, primary key (id))", SENSOR_TABLE),
                 String.format("insert into %s (id, name) values (?, ?)", SENSOR_TABLE),
                 String.format("select id, name from %s", SENSOR_TABLE)
         };
 
         DATE_TABLE = "DATETIME";
         DATE_SQL = new String[]{
-                "create table " + DATE_TABLE + " (id int not null, desc_str varchar(24) not null,"
+                "create table if not exists " + DATE_TABLE + " (id int not null, desc_str varchar(24) not null,"
                         + " year_int int not null, month_int int not null, date_int int not null,"
                         + " day_int int not null, time_int int not null, primary key (id))",
                 String.format("insert into %s (id, desc_str, year_int, month_int, date_int, day_int, time_int) values (?, ?, ?, ?, ?, ?, ?)", DATE_TABLE),
@@ -67,7 +67,7 @@ public class Derby {
 
         COUNT_TABLE = "COUNT";
         COUNT_SQL = new String[]{
-                String.format("create table %s (id int not null, counts int not null, dateId int not null,"
+                String.format("create table if not exists %s (id int not null, counts int not null, dateId int not null,"
                         + "sensorId int not null, primary key (id), foreign key (dateId) references %s (id),"
                         + "foreign key (sensorId) references %s (id))", COUNT_TABLE, DATE_TABLE, SENSOR_TABLE),
                 String.format("insert into %s (id, counts, dateId, sensorId) values (?, ?, ?, ?)", COUNT_TABLE),
@@ -281,20 +281,20 @@ public class Derby {
             // want to control transactions manually. Autocommit is on by default in JDBC.
             conn.setAutoCommit(false);
             // delete the table
-            for (int i = number - 1; i >= 0; --i) {
-                table = TABLES[i];
-                dropTable(table, conn, state);
-            }
+//            for (int i = number - 1; i >= 0; --i) {
+//                table = TABLES[i];
+//                dropTable(table, conn, state);
+//            }
             for (int i = 0; i < number; i++) {
                 table = TABLES[i];
                 sql = SQL_LIST[i];
                 createAndInsert(conn, state, table, sql);
             }
             // delete the table
-            for (int i = number - 1; i >= 0; --i) {
-                table = TABLES[i];
-                dropTable(table, conn, state);
-            }
+//            for (int i = number - 1; i >= 0; --i) {
+//                table = TABLES[i];
+//                dropTable(table, conn, state);
+//            }
 //            commit the transaction. Any changes will be persisted to the database now.
             conn.commit();
             System.out.println("Committed the transaction");
