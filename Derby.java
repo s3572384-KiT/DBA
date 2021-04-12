@@ -259,6 +259,10 @@ public class Derby {
         }
     }
 
+    /**
+     * important code reference:
+     * https://stackoverflow.com/questions/18593019/if-exists-not-recognized-in-derby
+     */
     private static void importToDerby() {
         String driver = "org.apache.derby.jdbc.EmbeddedDriver";
         String protocol = "jdbc:derby:";
@@ -276,16 +280,20 @@ public class Derby {
             System.out.println("Connected to database " + dbName);
             // want to control transactions manually. Autocommit is on by default in JDBC.
             conn.setAutoCommit(false);
-
+            // delete the table
+            for (int i = number - 1; i >= 0; --i) {
+                table = TABLES[i];
+                dropTable(table, conn, state);
+            }
             for (int i = 0; i < number; i++) {
                 table = TABLES[i];
                 sql = SQL_LIST[i];
                 createAndInsert(conn, state, table, sql);
             }
             // delete the table
-            for (String s : TABLES) {
-                state.execute("drop table " + s);
-                System.out.println("Dropped table " + s);
+            for (int i = number - 1; i >= 0; --i) {
+                table = TABLES[i];
+                dropTable(table, conn, state);
             }
 //            commit the transaction. Any changes will be persisted to the database now.
             conn.commit();
@@ -317,6 +325,16 @@ public class Derby {
             System.exit(1);
         }
         System.out.println("Getting Started With Derby JDBC program ending.");
+    }
+
+    private static void dropTable(String table, Connection conn, Statement state) throws SQLException {
+        DatabaseMetaData databaseMetadata = conn.getMetaData();
+        ResultSet resultSet;
+        resultSet = databaseMetadata.getTables(null, null, table, null);
+        if (resultSet.next()) {
+            state.execute("drop table " + table);
+            System.out.println("Dropped table " + table);
+        }
     }
 
     static public void main(String... args) {
