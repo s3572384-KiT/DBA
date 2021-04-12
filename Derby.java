@@ -51,7 +51,7 @@ public class Derby {
 
         SENSOR_TABLE = "SENSOR";
         SENSOR_SQL = new String[]{
-                String.format("create table %s (id int not null, name varchar(40) not null, primary key(id))", SENSOR_TABLE),
+                String.format("create table %s (id int not null, name varchar(40) not null, primary key (id))", SENSOR_TABLE),
                 String.format("insert into %s (id, name) values (?, ?)", SENSOR_TABLE),
                 String.format("select id, name from %s", SENSOR_TABLE)
         };
@@ -60,7 +60,7 @@ public class Derby {
         DATE_SQL = new String[]{
                 "create table " + DATE_TABLE + " (id int not null, desc_str varchar(24) not null,"
                         + " year_int int not null, month_int int not null, date_int int not null,"
-                        + " day_int int not null, time_int int not null, primary key(id))",
+                        + " day_int int not null, time_int int not null, primary key (id))",
                 String.format("insert into %s (id, desc_str, year_int, month_int, date_int, day_int, time_int) values (?, ?, ?, ?, ?, ?, ?)", DATE_TABLE),
                 String.format("select id, desc_str, year_int, month_int, date_int, day_int, time_int from %s", DATE_TABLE)
         };
@@ -68,8 +68,8 @@ public class Derby {
         COUNT_TABLE = "COUNT";
         COUNT_SQL = new String[]{
                 String.format("create table %s (id int not null, counts int not null, dateId int not null,"
-                        + "sensorId int not null, primary key(id), foreign key (dateId) references %s(id),"
-                        + "foreign key (sensorId) references %s(id))", COUNT_TABLE, DATE_TABLE, SENSOR_TABLE),
+                        + "sensorId int not null, primary key (id), foreign key (dateId) references %s (id),"
+                        + "foreign key (sensorId) references %s (id))", COUNT_TABLE, DATE_TABLE, SENSOR_TABLE),
                 String.format("insert into %s (id, counts, dateId, sensorId) values (?, ?, ?, ?)", COUNT_TABLE),
                 String.format("select id, counts, dateId, sensorId from %s", COUNT_TABLE)
         };
