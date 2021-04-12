@@ -69,7 +69,7 @@ public class Derby {
         COUNT_SQL = new String[]{
                 String.format("create table %s (id int not null, counts int not null, dateId int not null,"
                         + "sensorId int not null, primary key(id), constraint fk_dateId foreign key (dateId) references %s(id),"
-                        + "constraint fk_sensorId foreign key (sensorId) references %s(id)", COUNT_TABLE, DATE_TABLE, SENSOR_TABLE),
+                        + "constraint fk_sensorId foreign key (sensorId) references %s(id))", COUNT_TABLE, DATE_TABLE, SENSOR_TABLE),
                 String.format("insert into %s (id, counts, dateId, sensorId) values (?, ?, ?, ?)", COUNT_TABLE),
                 String.format("select id, counts, dateId, sensorId from %s", COUNT_TABLE)
         };
