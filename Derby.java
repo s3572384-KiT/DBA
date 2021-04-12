@@ -6,7 +6,10 @@ import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
 import java.sql.*;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 
 /**
  * important - code reference:
@@ -14,14 +17,12 @@ import java.util.*;
  *
  * @author Kit T
  * @version 1.0
- * @since 11-April-2021
+ * @since 12-April-2021
  */
 public class Derby {
 
     private final static String[] MONTHS;
     private final static String[] DAYS;
-    private final static Map<String, Integer> MONTHS_MAP;
-    private final static Map<String, Integer> DAYS_MAP;
 
     private final static List<Count> COUNT_LIST;
 
@@ -30,7 +31,6 @@ public class Derby {
 
     private final static List<Sensor> SENSOR_LIST;
     private final static Set<Integer> SENSOR_ID_SET;
-    private final static Map<Integer, String> SENSOR_MAP;
 
     private final static String DATE_TABLE;
     private final static String[] DATE_SQL;
@@ -51,14 +51,14 @@ public class Derby {
 
         SENSOR_TABLE = "SENSOR";
         SENSOR_SQL = new String[]{
-                String.format("create table if not exists %s (id int not null, name varchar(40) not null, primary key (id))", SENSOR_TABLE),
+                String.format("create table %s (id int not null, name varchar(40) not null, primary key (id))", SENSOR_TABLE),
                 String.format("insert into %s (id, name) values (?, ?)", SENSOR_TABLE),
                 String.format("select id, name from %s", SENSOR_TABLE)
         };
 
         DATE_TABLE = "DATETIME";
         DATE_SQL = new String[]{
-                "create table if not exists " + DATE_TABLE + " (id int not null, desc_str varchar(24) not null,"
+                "create table " + DATE_TABLE + " (id int not null, desc_str varchar(24) not null,"
                         + " year_int int not null, month_int int not null, date_int int not null,"
                         + " day_int int not null, time_int int not null, primary key (id))",
                 String.format("insert into %s (id, desc_str, year_int, month_int, date_int, day_int, time_int) values (?, ?, ?, ?, ?, ?, ?)", DATE_TABLE),
@@ -67,7 +67,7 @@ public class Derby {
 
         COUNT_TABLE = "COUNT";
         COUNT_SQL = new String[]{
-                String.format("create table if not exists %s (id int not null, counts int not null, dateId int not null,"
+                String.format("create table %s (id int not null, counts int not null, dateId int not null,"
                         + "sensorId int not null, primary key (id), foreign key (dateId) references %s (id),"
                         + "foreign key (sensorId) references %s (id))", COUNT_TABLE, DATE_TABLE, SENSOR_TABLE),
                 String.format("insert into %s (id, counts, dateId, sensorId) values (?, ?, ?, ?)", COUNT_TABLE),
@@ -77,15 +77,6 @@ public class Derby {
         TABLES = new String[]{DATE_TABLE, SENSOR_TABLE, COUNT_TABLE};
         SQL_LIST = new String[][]{DATE_SQL, SENSOR_SQL, COUNT_SQL};
 
-        MONTHS_MAP = new HashMap<>();
-        for (int i = 1; i < MONTHS.length; i++) {
-            MONTHS_MAP.put(MONTHS[i].toLowerCase(), i);
-        }
-        DAYS_MAP = new HashMap<>();
-        for (int i = 1; i < DAYS.length; i++) {
-            DAYS_MAP.put(DAYS[i].toLowerCase(), i);
-        }
-
         COUNT_LIST = new ArrayList<>();
 
         DATE_TIME_LIST = new ArrayList<>();
@@ -93,9 +84,37 @@ public class Derby {
 
         SENSOR_LIST = new ArrayList<>();
         SENSOR_ID_SET = new HashSet<>();
-        SENSOR_MAP = new HashMap<>();
     }
 
+    /**
+     * convert the month or day into respective number, "January" -> 1, "Wednesday" -> 3
+     *
+     * @param key String description for month or day, e.g. "January", "Wednesday"
+     * @param map String array of months or days
+     * @return the respective number for the month or day
+     */
+    private static int getInt(String key, String[] map) {
+        int len = map.length;
+        for (int i = 0; i < len; i++) {
+            if (map[i].equalsIgnoreCase(key)) {
+                return i;
+            }
+        }
+        return -1;
+    }
+
+    private static int toInt(String str) {
+        return Integer.parseInt(str);
+    }
+
+    /**
+     * Load data from csv file into memory, structure the data into 3 entities:
+     * 1. count entity
+     * 2. date time entity
+     * 3. sensor entity
+     *
+     * @param path the directory path leads to the source file
+     */
     private static void loadDate(String path) {
         try (BufferedReader br = new BufferedReader(new FileReader(path))) {
             final String COMMA = ",";
@@ -112,12 +131,14 @@ public class Derby {
             int dayIdx = 5, timeIdx = 6, sensorIdIdx = 7, sensorNameIdx = 8, hourlyCountsIdx = 9;
 
             while ((record = br.readLine()) != null) {
+                // skip the 1st line which is header
                 if (isHeader) {
                     isHeader = false;
                     continue;
                 }
                 data = record.split(COMMA);
 
+                // extract the each attribute from the record
                 countId = toInt(data[countIdIdx].trim());
                 dateDesc = data[dateTimeIdx].trim();
                 yearStr = data[yearIdx].trim();
@@ -132,31 +153,27 @@ public class Derby {
                 year = toInt(yearStr);
                 date = toInt(dateStr);
                 time = toInt(timeStr);
+                month = getInt(monthStr, MONTHS);
+                day = getInt(dayStr, DAYS);
 
-                if (!MONTHS_MAP.containsKey(monthStr.toLowerCase())) {
-                    System.out.println("month does not match !!!");
-                    return;
-                }
-                if (!DAYS_MAP.containsKey(dayStr.toLowerCase())) {
-                    System.out.println("day does not match !!!");
-                    return;
-                }
-                month = MONTHS_MAP.get(monthStr.toLowerCase());
-                day = DAYS_MAP.get(dayStr.toLowerCase());
-
-                dateId = toInt(yearStr
-                        + (month < 10 ? "0" + month : month)
-                        + (date < 10 ? "0" + date : date)
-                        + (time < 10 ? "0" + time : time));
+                // use year + month + date + time for datetime id
+                // e.g. year - 2009, month - 10, date - 6, time - 9
+                // datetime id will be 2009100609
+                dateId = toInt(yearStr + (month < 10 ? "0" + month : month)
+                        + (date < 10 ? "0" + date : date) + (time < 10 ? "0" + time : time));
 
                 addToDateList(dateId, dateDesc, year, month, date, day, time);
                 addToSensorList(sensorId, sensorName);
                 addToCountList(countId, hourlyCounts, dateId, sensorId);
             }
 
+            // sort all the lists before importing to Derby, use comparator
             DATE_TIME_LIST.sort((o1, o2) -> o1.getId() - o2.getId());
             SENSOR_LIST.sort((o1, o2) -> o1.getId() - o2.getId());
             COUNT_LIST.sort((o1, o2) -> o1.getId() - o2.getId());
+
+            System.out.println("all the data loaded into the memory completes ...");
+
             importToDerby();
         } catch (IOException e) {
             e.printStackTrace();
@@ -222,35 +239,30 @@ public class Derby {
         try {
             state.execute(createSql);
             PreparedStatement psInsert = conn.prepareStatement(insertSql);
+            System.out.printf("Inserted %s record%n", table);
             if (table.equals(SENSOR_TABLE)) {
                 insertSensors(psInsert);
-                System.out.println("Inserted sensor record");
-
-                result = state.executeQuery(querySql);
-                while (result.next()) {
-                    System.out.println(result.getInt(1) + " " + result.getString(2));
-                }
+//                result = state.executeQuery(querySql);
+//                while (result.next()) {
+//                    System.out.println(result.getInt(1) + " " + result.getString(2));
+//                }
             } else if (table.equals(COUNT_TABLE)) {
                 insertCounts(psInsert);
-                System.out.println("Inserted count record");
-
-                result = state.executeQuery(querySql);
-                while (result.next()) {
-                    System.out.println(result.getInt(1) + " " + result.getInt(2)
-                            + " " + result.getInt(3) + " " + result.getInt(4));
-                }
+//                result = state.executeQuery(querySql);
+//                while (result.next()) {
+//                    System.out.println(result.getInt(1) + " " + result.getInt(2)
+//                            + " " + result.getInt(3) + " " + result.getInt(4));
+//                }
             } else if (table.equals(DATE_TABLE)) {
                 insertDates(psInsert);
-                System.out.println("Inserted date record");
-
-                result = state.executeQuery(querySql);
-                while (result.next()) {
-                    System.out.println(result.getInt(1) + " " + result.getString(2) + " "
-                            + result.getInt(3) + " " + MONTHS[result.getInt(4)] + " "
-                            + result.getInt(5) + " " + DAYS[result.getInt(6)] + " " + result.getInt(7));
-                }
+//                result = state.executeQuery(querySql);
+//                while (result.next()) {
+//                    System.out.println(result.getInt(1) + " " + result.getString(2) + " "
+//                            + result.getInt(3) + " " + MONTHS[result.getInt(4)] + " "
+//                            + result.getInt(5) + " " + DAYS[result.getInt(6)] + " " + result.getInt(7));
+//                }
             }
-            // Release the resources (clean up )
+            // Release the resources
             if (psInsert != null) {
                 psInsert.close();
             }
@@ -278,19 +290,24 @@ public class Derby {
                 Statement state = conn.createStatement();
         ) {
             System.out.println("Connected to database " + dbName);
-            // want to control transactions manually. Autocommit is on by default in JDBC.
+            // control transactions manually, autocommit is on by default in JDBC
             conn.setAutoCommit(false);
-            // delete the table
-//            for (int i = number - 1; i >= 0; --i) {
-//                table = TABLES[i];
-//                dropTable(table, conn, state);
-//            }
+            // drop the table if exists
+            for (int i = number - 1; i >= 0; --i) {
+                table = TABLES[i];
+                dropTable(table, conn, state);
+            }
+            System.out.println("loading data into Derby begins ...");
+            long start = System.currentTimeMillis();
             for (int i = 0; i < number; i++) {
                 table = TABLES[i];
                 sql = SQL_LIST[i];
                 createAndInsert(conn, state, table, sql);
             }
-            // delete the table
+            long end = System.currentTimeMillis();
+            long duration = end - start;
+            System.out.printf("loading data int Derby completes ... time taken %d millisecond = %.2f seconds", duration, duration / 1000f);
+            // drop the table if exists
 //            for (int i = number - 1; i >= 0; --i) {
 //                table = TABLES[i];
 //                dropTable(table, conn, state);
@@ -327,122 +344,29 @@ public class Derby {
         System.out.println("Getting Started With Derby JDBC program ending.");
     }
 
+    /**
+     * Drop table if exists
+     * important code reference:
+     * http://somesimplethings.blogspot.com/2010/03/derby-create-table-if-not-exists.html
+     *
+     * @param table table name
+     * @param conn  connection to the Database
+     * @param state statement
+     * @throws SQLException exception when invalid sql
+     */
     private static void dropTable(String table, Connection conn, Statement state) throws SQLException {
         DatabaseMetaData databaseMetadata = conn.getMetaData();
         ResultSet resultSet;
         resultSet = databaseMetadata.getTables(null, null, table, null);
         if (resultSet.next()) {
-            state.execute("drop table " + table);
-            System.out.println("Dropped table " + table);
+            String sql = "drop table " + table;
+            state.execute(sql);
+            System.out.println("Dropped table: " + table);
         }
     }
 
     static public void main(String... args) {
         final String path = "../count.csv";
         loadDate(path);
-    }
-
-    public static void main1(String[] args) throws IOException {
-        final String COMMA = ",";
-        final String path = "/root/rmit/Pedestrian_Counting_System_-_Monthly__counts_per_hour_.csv";
-
-        try (BufferedReader br = new BufferedReader(new FileReader(path))) {
-            String line;
-            String[] values;
-            int sensorId, dateId, statId, counts, year, month, date, day, time;
-            String desc;
-            String sensorName;
-            String regex = "\\d+/\\d+/\\d+\\s\\d+:\\d+:\\d+";
-            boolean isHeader = true;
-            while ((line = br.readLine()) != null) {
-                if (isHeader) {
-                    isHeader = false;
-                    continue;
-                }
-                values = line.split(COMMA);
-
-                statId = toInt(values[0].trim());
-                desc = values[1].trim();
-                year = toInt(values[2].trim());
-                month = MONTHS_MAP.get(values[3].trim());
-                date = toInt(values[4].trim());
-                day = DAYS_MAP.get(values[5].trim());
-                time = toInt(values[6].trim());
-                counts = toInt(values[9].trim());
-                sensorId = toInt(values[7].trim());
-                sensorName = values[8].trim();
-
-//                dateId = calcDateId(time, day, date, month, year);
-
-//                set1.add(values[0].trim());
-//                set2.add(values[2].trim() + values[3].trim() + values[4].trim() + values[5].trim() + values[6].trim());
-//                set3.add(values[7].trim());
-
-//                System.out.println("time " + time + "  day: " + day + "  month:  " + month + "  year: " + year);
-//                System.out.println(dateId);
-
-//                if (!dateIdSet.contains(dateId)) {
-//                    dateIdSet.add(dateId);
-//                    dateTimeList.add(new DateTime(dateId, desc, year, month, date, day, time));
-//                }
-//
-//                if (!sensorList.contains(sensorId)) {
-//                    sensorList.push(new Sensor(sensorId, sensorName));
-//                }
-
-
-                if (!SENSOR_MAP.containsKey(sensorId)) {
-                    SENSOR_MAP.put(sensorId, sensorName);
-                    SENSOR_LIST.add(new Sensor(sensorId, sensorName));
-                } else {
-                    if (!sensorName.equals(SENSOR_MAP.get(sensorId))) {
-                        System.out.println("found same sensor id but different name: " + sensorId);
-                        System.out.println(sensorName);
-                        System.out.println(SENSOR_MAP.get(sensorId));
-                    }
-                }
-
-//                if (!sensorIdSet.contains(sensorId)) {
-//                    sensorIdSet.add(sensorId);
-//                    sensors.add(new Sensor(sensorId, sensorName));
-//                }
-
-//                statList.add(new CountStat(statId, counts, dateId, sensorId));
-            }
-            System.out.println("sensor id set: " + SENSOR_ID_SET.size() + "  sensor size: " + SENSOR_LIST.size());
-//            System.out.println("stat size: " + statList.size());
-//            System.out.println("date time id set : " + dateIdSet.size() + "   datetime size:" + dateTimeList.size());
-
-//            System.out.println("set1 : " + set1.size());
-//            System.out.println("set2 : " + set2.size());
-//            System.out.println("set3 : " + set3.size());
-
-            SENSOR_LIST.sort(Comparator.comparingInt(Sensor::getId));
-            for (Sensor sensor : SENSOR_LIST) {
-                System.out.println(sensor);
-            }
-
-            System.out.println("===================");
-
-//            sensorList.sortAscend();
-//            System.out.println(sensorList);
-
-//            if (sensorList.size() != sensors.size()) {
-//                System.out.println("fail ...");
-//                return;
-//            }
-//            int size = sensorList.size();
-//            for (int i = 0; i < size; i++) {
-//                if (!sensorList.get(i).equals(sensors.get(i))) {
-//                    System.out.println("not equal ...");
-//                    return;
-//                }
-//            }
-//            System.out.println("ok");
-        }
-    }
-
-    private static int toInt(String str) {
-        return Integer.parseInt(str);
     }
 }
