@@ -1,9 +1,13 @@
 const fs = require("fs");
 const fastcsv = require("fast-csv");
-const mongodb = require("mongodb").MongoClient;
+// const mongodb = require("mongodb").MongoClient;
+const { report } = require("node:process");
+
+const { MongoClient } = require("mongodb");
+
 
 const path = "../count.csv";
-let url = "mongodb://localhost:27017/";
+let uri = "mongodb://localhost:27017/";
 let stream = fs.createReadStream(path);
 
 // list container for 3 different entities
@@ -101,6 +105,8 @@ let count = 0;
 const start = Date.now();
 console.log('Job begins: loading data starting ...');
 
+const client;
+
 let csvStream = fastcsv
 	.parse()
 	.on("data", data => {
@@ -144,7 +150,7 @@ let csvStream = fastcsv
 			addToCountList(countId, hourlyCounts, dateId, sensorId);
 		}
 	})
-	.on("end", async () => {
+	.on("end", () => {
 		// remove the first line: header
 		// csvData.shift();
 		// save to the MongoDB database collection
@@ -158,21 +164,19 @@ let csvStream = fastcsv
 		console.log("sensor count: ", sensorList.length);
 		console.log("count number: ", countList.length);
 
-		// connect to mongodb
-		const client = await mongodb.connect(url, {
-			useNewUrlParser: true,
-			useUnifiedTopology: true
-		});
+		run().catch(console.dir);
 
-		await doInsert(client, dateTimeList, sensorList, countList);
+		// const client = await mongodb.connect(url, {
+		// 	useNewUrlParser: true,
+		// 	useUnifiedTopology: true
+		// });
 
-		// close connection
-		client.close();
+		// await doInsert(client, dateTimeList, sensorList, countList);
 
-		const duration = Date.now() - start;
-		console.log('Job finished: loading data into mongodb completed ...');
 
-		console.log(`time elapsed = ${duration} milliseconds, ${Math.floor(duration / 1000)} seconds`);
+		// await report();
+
+
 		// mongodb.connect(
 		// 	url,
 		// 	{ useNewUrlParser: true, useUnifiedTopology: true },
@@ -212,6 +216,52 @@ let csvStream = fastcsv
 		// 	}
 		// );
 	});
+
+const report = () => {
+	const duration = Date.now() - start;
+	console.log('Job finished: loading data into mongodb completed ...');
+
+	console.log(`time elapsed = ${duration} milliseconds, ${Math.floor(duration / 1000)} seconds`);
+}
+
+const run = async () => {
+	try {
+		const db = "count_db";
+		let dateTimeCol = "datetime";
+		let sensorCol = "sensor";
+		let countCol = "count";
+
+		// connect to mongodb
+		client = new MongoClient(uri);
+		await client.connect();
+		const database = client.db(db);
+		dateTimeCol = database.collection(dateTimeCol);
+		sensorCol = database.collection(sensorCol);
+		countCol = database.collection(countCol);
+		// this option prevents additional documents from being inserted if one fails
+		const options = { ordered: true };
+
+		const dateTimeResult = await dateTimeCol.insertMany(dateTimeList, options, (err, res) => {
+			if (err) throw err;
+			console.log(`Inserted dateTimeList: ${res.insertedCount} rows`);
+		});
+		console.log(`date time: ${dateTimeResult.insertedCount} documents were inserted`);
+		const sensorResult = await sensorCol.insertMany(sensorList, options, (err, res) => {
+			if (err) throw err;
+			console.log(`Inserted sensorList: ${res.insertedCount} rows`);
+		});
+		console.log(`sensor: ${sensorResult.insertedCount} documents were inserted`);
+		const countResult = await countCol.insertMany(countList, options, (err, res) => {
+			if (err) throw err;
+			console.log(`Inserted countList: ${res.insertedCount} rows`);
+		});
+		console.log(`count: ${countResult.insertedCount} documents were inserted`);
+	} finally {
+		// close connection
+		await client.close();
+		report();
+	}
+}
 
 const doInsert = async (client, dateTimeList, sensorList, countList) => {
 
