@@ -158,7 +158,16 @@ let csvStream = fastcsv
 		console.log("sensor count: ", sensorList.length);
 		console.log("count number: ", countList.length);
 
-		await doInsert(dateTimeList, sensorList, countList);
+		// connect to mongodb
+		const client = await mongodb.connect(url, {
+			useNewUrlParser: true,
+			useUnifiedTopology: true
+		});
+
+		await doInsert(client, dateTimeList, sensorList, countList);
+
+		// close connection
+		client.close();
 
 		const duration = Date.now() - start;
 		console.log('Job finished: loading data into mongodb completed ...');
@@ -204,12 +213,7 @@ let csvStream = fastcsv
 		// );
 	});
 
-const doInsert = async (dateTimeList, sensorList, countList) => {
-	// connect to mongodb
-	const client = await mongodb.connect(url, {
-		useNewUrlParser: true,
-		useUnifiedTopology: true
-	});
+const doInsert = async (client, dateTimeList, sensorList, countList) => {
 
 	let db = "count_db";
 	const dateTimeCol = "datetime";
@@ -233,9 +237,6 @@ const doInsert = async (dateTimeList, sensorList, countList) => {
 		if (err) throw err;
 		console.log(`Inserted countList: ${res.insertedCount} rows`);
 	});
-
-	// close connection
-	client.close();
 }
 
 stream.pipe(csvStream);
