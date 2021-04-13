@@ -217,7 +217,7 @@ let csvStream = fastcsv
 		// );
 	});
 
-const report = () => {
+const reportSummary = () => {
 	const duration = Date.now() - start;
 	console.log('Job finished: loading data into mongodb completed ...');
 
@@ -258,7 +258,7 @@ const run = async () => {
 	} finally {
 		// close connection
 		await client.close();
-		report();
+		reportSummary();
 	}
 }
 
