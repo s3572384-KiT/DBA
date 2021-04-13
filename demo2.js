@@ -144,7 +144,7 @@ let csvStream = fastcsv
 			addToCountList(countId, hourlyCounts, dateId, sensorId);
 		}
 	})
-	.on("end", () => {
+	.on("end", async () => {
 		// remove the first line: header
 		// csvData.shift();
 		// save to the MongoDB database collection
@@ -158,7 +158,7 @@ let csvStream = fastcsv
 		console.log("sensor count: ", sensorList.length);
 		console.log("count number: ", countList.length);
 
-		doInsert(dateTimeList, sensorList, countList);
+		await doInsert(dateTimeList, sensorList, countList);
 
 		const duration = Date.now() - start;
 		console.log('Job finished: loading data into mongodb completed ...');
