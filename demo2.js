@@ -145,11 +145,54 @@ let csvStream = fastcsv
 		// remove the first line: header
 		// csvData.shift();
 		// save to the MongoDB database collection
-		for (let i = 0; i < 10; ++i) {
+		for (let i = 0; i < 1; ++i) {
 			console.log(dateTimeList[i]);
 			console.log(sensorList[i]);
 			console.log(countList[i]);
 		}
+
+		console.log("date time count: ", dateTimeList.length);
+		console.log("sensor count: ", sensorList.length);
+		console.log("count number: ", countList.length);
+
+		mongodb.connect(
+			url,
+			{ useNewUrlParser: true, useUnifiedTopology: true },
+			(err, client) => {
+				if (err) throw err;
+
+				const db = "count_db";
+				const dateTimeCol = "datetime";
+				const sensorCol = "sensor";
+				const countCol = "count";
+
+				client
+					.db(db)
+					.collection(dateTimeCol)
+					.insertMany(dateTimeList, (err, res) => {
+						if (err) throw err;
+						console.log(`Inserted dateTimeList: ${res.insertedCount} rows`);
+					});
+
+				client
+					.db(db)
+					.collection(sensorCol)
+					.insertMany(sensorList, (err, res) => {
+						if (err) throw err;
+						console.log(`Inserted sensorList: ${res.insertedCount} rows`);
+					});
+
+				client
+					.db(db)
+					.collection(countCol)
+					.insertMany(countList, (err, res) => {
+						if (err) throw err;
+						console.log(`Inserted countList: ${res.insertedCount} rows`);
+					});
+
+				client.close();
+			}
+		);
 	});
 
 stream.pipe(csvStream);
