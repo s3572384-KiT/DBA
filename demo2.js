@@ -105,7 +105,7 @@ let count = 0;
 const start = Date.now();
 console.log('Job begins: loading data starting ...');
 
-const client;
+const client = new MongoClient(uri);
 
 let csvStream = fastcsv
 	.parse()
@@ -232,7 +232,6 @@ const run = async () => {
 		let countCol = "count";
 
 		// connect to mongodb
-		client = new MongoClient(uri);
 		await client.connect();
 		const database = client.db(db);
 		dateTimeCol = database.collection(dateTimeCol);
