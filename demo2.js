@@ -219,10 +219,10 @@ const reportSummary = () => {
 }
 
 const run = async () => {
+	let client;
 	try {
 		// const client = new MongoClient(uri);
-
-		const client = await mongodb.connect(url, {
+		client = await mongodb.connect(url, {
 			useNewUrlParser: true,
 			useUnifiedTopology: true
 		});
