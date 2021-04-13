@@ -105,15 +105,15 @@ let csvStream = fastcsv
 		} else {
 			// extract attributes
 			countId = data[countIdIdx];
-			dateTime = date[dateTimeIdx];
-			year = date[yearIdx];
-			month = date[monthIdx];
-			mDate = date[mDateIdx];
-			day = date[dayIdx];
-			time = date[timeIdx];
-			sensorId = date[sensorIdIdx];
-			sensorName = date[sensorNameIdx];
-			hourlyCounts = date[hourlyCountsIdx];
+			dateTime = data[dateTimeIdx];
+			year = data[yearIdx];
+			month = data[monthIdx];
+			mDate = data[mDateIdx];
+			day = data[dayIdx];
+			time = data[timeIdx];
+			sensorId = data[sensorIdIdx];
+			sensorName = data[sensorNameIdx];
+			hourlyCounts = data[hourlyCountsIdx];
 
 			// convert month, day, e.g. "February" -> 2, "Wednesday" -> 3
 			month = monthMap.get(month);
