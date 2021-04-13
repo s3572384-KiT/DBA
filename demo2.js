@@ -2,17 +2,19 @@ const fs = require("fs");
 const fastcsv = require("fast-csv");
 const mongodb = require("mongodb").MongoClient;
 
+const path = "../count.csv";
 let url = "mongodb://localhost:27017/";
-let stream = fs.createReadStream("../heap/count.csv");
+let stream = fs.createReadStream(path);
 
-let csvData = [];
+// list container for 3 different entities
 let dateTimeList = [];
 let sensorList = [];
 let countList = [];
 
 const monthMap = new Map();
 const dayMap = new Map();
-const months = ["", "January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+const months = ["", "January", "February", "March", "April", "May", "June", "July",
+	"August", "September", "October", "November", "December"];
 const days = ["", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
 
 for (let i = 1; i < months.length; ++i) {
@@ -104,16 +106,16 @@ let csvStream = fastcsv
 			console.log(data);
 		} else {
 			// extract attributes
-			countId = data[countIdIdx];
-			dateTime = data[dateTimeIdx];
-			year = data[yearIdx];
-			month = data[monthIdx];
-			mDate = data[mDateIdx];
-			day = data[dayIdx];
-			time = data[timeIdx];
-			sensorId = data[sensorIdIdx];
-			sensorName = data[sensorNameIdx];
-			hourlyCounts = data[hourlyCountsIdx];
+			countId = data[countIdIdx].trim();
+			dateTime = data[dateTimeIdx].trim();
+			year = data[yearIdx].trim();
+			month = data[monthIdx].trim();
+			mDate = data[mDateIdx].trim();
+			day = data[dayIdx].trim();
+			time = data[timeIdx].trim();
+			sensorId = data[sensorIdIdx].trim();
+			sensorName = data[sensorNameIdx].trim();
+			hourlyCounts = data[hourlyCountsIdx].trim();
 
 			// convert month, day, e.g. "February" -> 2, "Wednesday" -> 3
 			month = monthMap.get(month);
@@ -135,7 +137,7 @@ let csvStream = fastcsv
 
 			// add record to different list
 			addToSensorList(sensorId, sensorName, countId);
-			addToDateTimeList(dateId, datetime, year, month, mDate, day, time, countId);
+			addToDateTimeList(dateId, dateTime, year, month, mDate, day, time, countId);
 			addToCountList(countId, hourlyCounts, dateId, sensorId);
 		}
 	})
