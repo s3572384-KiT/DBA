@@ -98,6 +98,9 @@ const addToCountList = (countId, hourlyCounts, dateId, sensorId) => {
 }
 
 let count = 0;
+const start = Date.now();
+console.log('Job begins: loading data starting ...');
+
 let csvStream = fastcsv
 	.parse()
 	.on("data", data => {
@@ -155,44 +158,79 @@ let csvStream = fastcsv
 		console.log("sensor count: ", sensorList.length);
 		console.log("count number: ", countList.length);
 
-		mongodb.connect(
-			url,
-			{ useNewUrlParser: true, useUnifiedTopology: true },
-			(err, client) => {
-				if (err) throw err;
+		// connect to mongodb
+		const client = await mongodb.connect(url, {
+			useNewUrlParser: true,
+			useUnifiedTopology: true
+		});
 
-				const db = "count_db";
-				const dateTimeCol = "datetime";
-				const sensorCol = "sensor";
-				const countCol = "count";
+		let db = "count_db";
+		const dateTimeCol = "datetime";
+		const sensorCol = "sensor";
+		const countCol = "count";
+		// specify the DB's name
+		db = client.db(db);
 
-				client
-					.db(db)
-					.collection(dateTimeCol)
-					.insertMany(dateTimeList, (err, res) => {
-						if (err) throw err;
-						console.log(`Inserted dateTimeList: ${res.insertedCount} rows`);
-					});
+		// execute insert query
+		await db.collection(dateTimeCol).insertMany(dateTimeList, (err, res) => {
+			if (err) throw err;
+			console.log(`Inserted dateTimeList: ${res.insertedCount} rows`);
+		});
 
-				client
-					.db(db)
-					.collection(sensorCol)
-					.insertMany(sensorList, (err, res) => {
-						if (err) throw err;
-						console.log(`Inserted sensorList: ${res.insertedCount} rows`);
-					});
+		await db.collection(sensorCol).insertMany(sensorList, (err, res) => {
+			if (err) throw err;
+			console.log(`Inserted sensorList: ${res.insertedCount} rows`);
+		});
 
-				client
-					.db(db)
-					.collection(countCol)
-					.insertMany(countList, (err, res) => {
-						if (err) throw err;
-						console.log(`Inserted countList: ${res.insertedCount} rows`);
-					});
+		await db.collection(sensorCol).insertMany(countList, (err, res) => {
+			if (err) throw err;
+			console.log(`Inserted countList: ${res.insertedCount} rows`);
+		});
 
-				client.close();
-			}
-		);
+		// close connection
+		client.close();
+		const duration = Date.now() - start;
+		console.log('Job finished: loading data into mongodb completed ...');
+
+		console.log(`time elapsed = ${duration} milliseconds, ${Math.floor(duration / 1000)} seconds`);
+		// mongodb.connect(
+		// 	url,
+		// 	{ useNewUrlParser: true, useUnifiedTopology: true },
+		// 	(err, client) => {
+		// 		if (err) throw err;
+
+		// 		const dateTimeCol = "datetime";
+		// 		const sensorCol = "sensor";
+		// 		const countCol = "count";
+
+		// 		client
+		// 			.db(db)
+		// 			.collection(dateTimeCol)
+		// 			.insertMany(dateTimeList, (err, res) => {
+		// 				if (err) throw err;
+		// 				console.log(`Inserted dateTimeList: ${res.insertedCount} rows`);
+		// 			});
+
+		// 		client
+		// 			.db(db)
+		// 			.collection(sensorCol)
+		// 			.insertMany(sensorList, (err, res) => {
+		// 				if (err) throw err;
+		// 				console.log(`Inserted sensorList: ${res.insertedCount} rows`);
+		// 			});
+
+		// 		client
+		// 			.db(db)
+		// 			.collection(countCol)
+		// 			.insertMany(countList, (err, res) => {
+		// 				if (err) throw err;
+		// 				console.log(`Inserted countList: ${res.insertedCount} rows`);
+		// 			});
+
+		// 		client.close();
+
+		// 	}
+		// );
 	});
 
 stream.pipe(csvStream);
