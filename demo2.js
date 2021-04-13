@@ -1,8 +1,8 @@
 const fs = require("fs");
 const fastcsv = require("fast-csv");
-// const mongodb = require("mongodb").MongoClient;
+const mongodb = require("mongodb").MongoClient;
 
-const { MongoClient } = require("mongodb");
+// const { MongoClient } = require("mongodb");
 
 
 const path = "../count.csv";
@@ -104,7 +104,6 @@ let count = 0;
 const start = Date.now();
 console.log('Job begins: loading data starting ...');
 
-const client = new MongoClient(uri);
 
 let csvStream = fastcsv
 	.parse()
@@ -165,10 +164,6 @@ let csvStream = fastcsv
 
 		run().catch(console.dir);
 
-		// const client = await mongodb.connect(url, {
-		// 	useNewUrlParser: true,
-		// 	useUnifiedTopology: true
-		// });
 
 		// await doInsert(client, dateTimeList, sensorList, countList);
 
@@ -225,6 +220,13 @@ const reportSummary = () => {
 
 const run = async () => {
 	try {
+		// const client = new MongoClient(uri);
+
+		const client = await mongodb.connect(url, {
+			useNewUrlParser: true,
+			useUnifiedTopology: true
+		});
+
 		const db = "count_db";
 		let dateTimeCol = "datetime";
 		let sensorCol = "sensor";
