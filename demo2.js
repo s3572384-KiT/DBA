@@ -158,37 +158,8 @@ let csvStream = fastcsv
 		console.log("sensor count: ", sensorList.length);
 		console.log("count number: ", countList.length);
 
-		// connect to mongodb
-		const client = await mongodb.connect(url, {
-			useNewUrlParser: true,
-			useUnifiedTopology: true
-		});
+		doInsert(dateTimeList, sensorList, countList);
 
-		let db = "count_db";
-		const dateTimeCol = "datetime";
-		const sensorCol = "sensor";
-		const countCol = "count";
-		// specify the DB's name
-		db = client.db(db);
-
-		// execute insert query
-		await db.collection(dateTimeCol).insertMany(dateTimeList, (err, res) => {
-			if (err) throw err;
-			console.log(`Inserted dateTimeList: ${res.insertedCount} rows`);
-		});
-
-		await db.collection(sensorCol).insertMany(sensorList, (err, res) => {
-			if (err) throw err;
-			console.log(`Inserted sensorList: ${res.insertedCount} rows`);
-		});
-
-		await db.collection(sensorCol).insertMany(countList, (err, res) => {
-			if (err) throw err;
-			console.log(`Inserted countList: ${res.insertedCount} rows`);
-		});
-
-		// close connection
-		client.close();
 		const duration = Date.now() - start;
 		console.log('Job finished: loading data into mongodb completed ...');
 
@@ -232,5 +203,39 @@ let csvStream = fastcsv
 		// 	}
 		// );
 	});
+
+const doInsert = async (dateTimeList, sensorList, countList) => {
+	// connect to mongodb
+	const client = await mongodb.connect(url, {
+		useNewUrlParser: true,
+		useUnifiedTopology: true
+	});
+
+	let db = "count_db";
+	const dateTimeCol = "datetime";
+	const sensorCol = "sensor";
+	const countCol = "count";
+	// specify the DB's name
+	db = client.db(db);
+
+	// execute insert query
+	await db.collection(dateTimeCol).insertMany(dateTimeList, (err, res) => {
+		if (err) throw err;
+		console.log(`Inserted dateTimeList: ${res.insertedCount} rows`);
+	});
+
+	await db.collection(sensorCol).insertMany(sensorList, (err, res) => {
+		if (err) throw err;
+		console.log(`Inserted sensorList: ${res.insertedCount} rows`);
+	});
+
+	await db.collection(countCol).insertMany(countList, (err, res) => {
+		if (err) throw err;
+		console.log(`Inserted countList: ${res.insertedCount} rows`);
+	});
+
+	// close connection
+	client.close();
+}
 
 stream.pipe(csvStream);
