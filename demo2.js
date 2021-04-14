@@ -3,8 +3,6 @@ const fastcsv = require("fast-csv");
 const mongodb = require("mongodb").MongoClient;
 
 // const { MongoClient } = require("mongodb");
-
-
 const path = "../count.csv";
 let uri = "mongodb://localhost:27017/";
 let stream = fs.createReadStream(path);
@@ -219,48 +217,47 @@ const reportSummary = () => {
 }
 
 const run = async () => {
-	let client;
-	try {
-		// const client = new MongoClient(uri);
-		client = await mongodb.connect(url, {
-			useNewUrlParser: true,
-			useUnifiedTopology: true
-		});
+	// const client = new MongoClient(uri);
+	const client = await mongodb.connect(uri, {
+		useNewUrlParser: true,
+		useUnifiedTopology: true
+	});
 
-		const db = "count_db";
-		let dateTimeCol = "datetime";
-		let sensorCol = "sensor";
-		let countCol = "count";
+	const db = "count_db";
+	let dateTimeCol = "datetime";
+	let sensorCol = "sensor";
+	let countCol = "count";
 
-		// connect to mongodb
-		await client.connect();
-		const database = client.db(db);
-		dateTimeCol = database.collection(dateTimeCol);
-		sensorCol = database.collection(sensorCol);
-		countCol = database.collection(countCol);
-		// this option prevents additional documents from being inserted if one fails
-		const options = { ordered: true };
+	// connect to mongodb
+	await client.connect();
+	const database = client.db(db);
+	dateTimeCol = database.collection(dateTimeCol);
+	sensorCol = database.collection(sensorCol);
+	countCol = database.collection(countCol);
+	// this option prevents additional documents from being inserted if one fails
+	const options = { ordered: true };
 
-		const dateTimeResult = await dateTimeCol.insertMany(dateTimeList, options, (err, res) => {
-			if (err) throw err;
-			console.log(`Inserted dateTimeList: ${res.insertedCount} rows`);
-		});
-		console.log(`date time: ${dateTimeResult.insertedCount} documents were inserted`);
-		const sensorResult = await sensorCol.insertMany(sensorList, options, (err, res) => {
-			if (err) throw err;
-			console.log(`Inserted sensorList: ${res.insertedCount} rows`);
-		});
-		console.log(`sensor: ${sensorResult.insertedCount} documents were inserted`);
-		const countResult = await countCol.insertMany(countList, options, (err, res) => {
-			if (err) throw err;
-			console.log(`Inserted countList: ${res.insertedCount} rows`);
-		});
-		console.log(`count: ${countResult.insertedCount} documents were inserted`);
-	} finally {
-		// close connection
-		await client.close();
-		reportSummary();
-	}
+	const dateTimeResult = await dateTimeCol.insertMany(dateTimeList, options);
+	// , (err, res) => {
+	// 	if (err) throw err;
+	// 	console.log(`Inserted dateTimeList: ${res.insertedCount} rows`);
+	// });
+	console.log(`date time: ${dateTimeResult.insertedCount} documents were inserted`);
+	const sensorResult = await sensorCol.insertMany(sensorList, options);
+	// , (err, res) => {
+	// 	if (err) throw err;
+	// 	console.log(`Inserted sensorList: ${res.insertedCount} rows`);
+	// });
+	console.log(`sensor: ${sensorResult.insertedCount} documents were inserted`);
+	const countResult = await countCol.insertMany(countList, options);
+	// , (err, res) => {
+	// 	if (err) throw err;
+	// 	console.log(`Inserted countList: ${res.insertedCount} rows`);
+	// });
+	console.log(`count: ${countResult.insertedCount} documents were inserted`);
+	// close connection
+	await client.close();
+	reportSummary();
 }
 
 const doInsert = async (client, dateTimeList, sensorList, countList) => {
