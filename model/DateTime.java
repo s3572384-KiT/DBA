@@ -10,11 +10,16 @@ package model;
  * @since 11-April-2021
  */
 public class DateTime {
-
     private final int id;
+    /**
+     * DATE_TIME description
+     */
     private final String desc;
     private final int year;
     private final int month;
+    /**
+     * M_DATE
+     */
     private final int date;
     private final int time;
     private final int day;

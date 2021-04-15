@@ -15,6 +15,8 @@ import java.util.Set;
 /**
  * important - code reference:
  * https://www.tutorialspoint.com/java/java_documentation.htm
+ * <p>
+ * Loading data from CSV file then writing into Derby DB
  *
  * @author Kit T
  * @version 1.0
@@ -23,15 +25,33 @@ import java.util.Set;
 public class Derby {
     private String[] months;
     private String[] days;
+    /**
+     * Count List to store all count records
+     */
     private List<Count> countList;
+    /**
+     * Date Time List to store all datetime entities
+     */
     private List<DateTime> dateTimeList;
+    /**
+     * Date Time ID set to eliminate duplicates
+     */
     private Set<Integer> dateIdSet;
+    /**
+     * Sensor List to store all sensor entities
+     */
     private List<Sensor> sensorList;
+    /**
+     * Sensor ID set to eliminate duplicates
+     */
     private Set<Integer> sensorIdSet;
     private String dateTable;
     private String sensorTable;
     private String countTable;
     private String[] tables;
+    /**
+     * SQL statement array including create, insert, select
+     */
     private String[][] sqlList;
 
     /**
@@ -43,7 +63,8 @@ public class Derby {
      */
     private static int getInt(String key, String[] map) {
         int len = map.length;
-        for (int i = 0; i < len; i++) {
+        // ignore index 0
+        for (int i = 1; i < len; i++) {
             if (map[i].equalsIgnoreCase(key)) {
                 return i;
             }
@@ -75,31 +96,59 @@ public class Derby {
         DatabaseMetaData databaseMetadata = conn.getMetaData();
         ResultSet resultSet;
         resultSet = databaseMetadata.getTables(null, null, table, null);
+        // use table name to retrieve table metadata, if has next then indicates table exists
         if (resultSet.next()) {
             String sql = String.format("drop table %s", table);
             state.execute(sql);
-            System.out.println("Dropped table: " + table);
+            // use std_err as mentioned in the requirement
+            System.err.println("Dropped table: " + table);
         }
     }
 
     /**
-     * Derby Database loading program driver function
+     * Derby Database loading program driver function, program entry point
      *
      * @param args command line arguments - an array of String arguments
      */
     public static void main(String[] args) {
-        final String path = "../count.csv";
-        File file = new File(path);
-        if (!file.exists()) {
-            System.err.println("CSV file does not exist ...");
+        Derby derby = new Derby();
+        // require file path argument from command line
+        // verify arguments, if invalid then print error message and exit the program
+        if (!derby.verifyArgs(args)) {
+            // if file path is not provided then print error message and exit
             return;
         }
-        Derby derby = new Derby();
+        final String path = args[0];
+        // initialise list containers for counts, datetime and sensor
         derby.init();
+        // loading data from CSV file to memory then store into Derby Database
         derby.loadDate(path);
     }
 
     /**
+     * Verify if the command line arguments meet the requirement
+     * standard format: java Derby datafile
+     * args-1: path for datafile
+     *
+     * @param args an array of String arguments
+     * @return true if requirements met, false otherwise
+     */
+    private boolean verifyArgs(String[] args) {
+        // require file path argument from command line
+        int required = 1;
+        // if 1 condition met, a) no file path provided; b) file does not exist
+        if (args == null || args.length < required || !(new File(args[0]).exists())) {
+            System.err.println("insufficient number of arguments OR invalid arguments OR CSV file not exist");
+            System.err.println("command to execute the program: java Derby datafile");
+            System.err.println("example: java Derby file.csv");
+            return false;
+        }
+        return true;
+    }
+
+    /**
+     * important - code reference:
+     * https://www.guru99.com/buffered-reader-in-java.html
      * Load data from csv file into memory, structure the data into 3 entities:
      * 1. count entity
      * 2. date time entity
@@ -108,6 +157,8 @@ public class Derby {
      * @param path the directory path leads to the source file
      */
     private void loadDate(String path) {
+        // auto closable without having to code finally code block
+        // code reference: https://www.guru99.com/buffered-reader-in-java.html
         try (BufferedReader br = new BufferedReader(new FileReader(path))) {
             final String comma = ",";
             boolean isHeader = true;
@@ -130,7 +181,7 @@ public class Derby {
                 }
                 data = record.split(comma);
 
-                // extract the each attribute from the record
+                // extract the each attribute from the record, remove any space left-side and right-side
                 countId = toInt(data[countIdIdx].trim());
                 dateDesc = data[dateTimeIdx].trim();
                 yearStr = data[yearIdx].trim();
@@ -142,9 +193,11 @@ public class Derby {
                 sensorName = data[sensorNameIdx].trim();
                 hourlyCounts = toInt(data[hourlyCountsIdx].trim());
 
+                // convert String into Int
                 year = toInt(yearStr);
                 date = toInt(dateStr);
                 time = toInt(timeStr);
+                // convert month and day into int, e.g. "September" -> 9, "Monday" -> 1
                 month = getInt(monthStr, months);
                 day = getInt(dayStr, days);
 
@@ -154,24 +207,32 @@ public class Derby {
                 dateId = toInt(yearStr + (month < 10 ? "0" + month : month)
                         + (date < 10 ? "0" + date : date) + (time < 10 ? "0" + time : time));
 
+                // add attributes of each entity into different list containers
                 addToDateList(dateId, dateDesc, year, month, date, day, time);
                 addToSensorList(sensorId, sensorName);
                 addToCountList(countId, hourlyCounts, dateId, sensorId);
             }
 
-            // sort all the lists before importing to Derby, use comparator
+            // sort all the lists in ascending order before importing to Derby, use comparator mechanism
             dateTimeList.sort((o1, o2) -> o1.getId() - o2.getId());
             sensorList.sort((o1, o2) -> o1.getId() - o2.getId());
             countList.sort((o1, o2) -> o1.getId() - o2.getId());
+            // use std_err as required
+            System.err.println("all the data loaded into the memory completes ...");
 
-            System.out.println("all the data loaded into the memory completes ...");
-
+            // import all list containers into Derby DB
             importToDerby();
         } catch (IOException e) {
             e.printStackTrace();
         }
     }
 
+    /**
+     * Insert all the dates from date list to Derby DB
+     *
+     * @param psInsert prepared statement for insertion
+     * @throws SQLException SQL exception
+     */
     private void insertDates(PreparedStatement psInsert) throws SQLException {
         for (DateTime date : dateTimeList) {
             psInsert.setInt(1, date.getId());
@@ -185,6 +246,12 @@ public class Derby {
         }
     }
 
+    /**
+     * Insert all the sensors from sensor list to Derby DB
+     *
+     * @param psInsert prepared statement for insertion
+     * @throws SQLException SQL exception
+     */
     private void insertSensors(PreparedStatement psInsert) throws SQLException {
         for (Sensor sensor : sensorList) {
             psInsert.setInt(1, sensor.getId());
@@ -193,6 +260,12 @@ public class Derby {
         }
     }
 
+    /**
+     * Insert all the counts from counts list to Derby DB
+     *
+     * @param psInsert prepared statement for insertion
+     * @throws SQLException SQL exception
+     */
     private void insertCounts(PreparedStatement psInsert) throws SQLException {
         for (Count count : countList) {
             psInsert.setInt(1, count.getId());
@@ -203,56 +276,80 @@ public class Derby {
         }
     }
 
+    /**
+     * Add all the datetime records from csv file to date list
+     *
+     * @param dateId   date id
+     * @param dateDesc date time description
+     * @param year     year int
+     * @param month    month int
+     * @param date     date int
+     * @param day      day int
+     * @param time     time int
+     */
     private void addToDateList(int dateId, String dateDesc, int year, int month, int date, int day, int time) {
+        // if data ID set does not contain dataId, then added to list
+        // usage: eliminate the duplicates
         if (!dateIdSet.contains(dateId)) {
             dateIdSet.add(dateId);
             dateTimeList.add(new DateTime(dateId, dateDesc, year, month, date, day, time));
         }
     }
 
+    /**
+     * Add all the hourly counts records from csv file to counts list
+     *
+     * @param countId  count id
+     * @param counts   hourly counts
+     * @param dateId   datetime id
+     * @param sensorId sensor id
+     */
     private void addToCountList(int countId, int counts, int dateId, int sensorId) {
         countList.add(new Count(countId, counts, dateId, sensorId));
     }
 
+    /**
+     * Add all the sensors from csv file to sensor list
+     *
+     * @param sensorId   sensor id
+     * @param sensorName sensor name
+     */
     private void addToSensorList(int sensorId, String sensorName) {
+        // if sensor ID set does not contain sensorId, then added to list
+        // usage: eliminate the duplicates
         if (!sensorIdSet.contains(sensorId)) {
             sensorIdSet.add(sensorId);
             sensorList.add(new Sensor(sensorId, sensorName));
         }
     }
 
+    /**
+     * create 3 tables and insert all the data to the Database
+     *
+     * @param conn  DB connection
+     * @param state statement
+     * @param table table name
+     * @param sql   SQL schema - create, insert, select
+     */
     private void createAndInsert(Connection conn, Statement state, String table, String[] sql) {
         String createSql = sql[0];
         String insertSql = sql[1];
         String querySql = sql[2];
 
         ResultSet result;
-        System.out.println(" . . . . creating table " + table);
+        System.err.println("Sub task: creating table " + table);
         try {
+            // execute sql to create the table
             state.execute(createSql);
             PreparedStatement psInsert = conn.prepareStatement(insertSql);
-            System.out.printf("Inserted %s record%n", table);
+            System.err.printf("Sub task: insert records into %s%n", table);
+            // insert data into table based on the table name
             if (table.equals(sensorTable)) {
                 insertSensors(psInsert);
-//                result = state.executeQuery(querySql);
-//                while (result.next()) {
-//                    System.out.println(result.getInt(1) + " " + result.getString(2));
-//                }
             } else if (table.equals(countTable)) {
                 insertCounts(psInsert);
-//                result = state.executeQuery(querySql);
-//                while (result.next()) {
-//                    System.out.println(result.getInt(1) + " " + result.getInt(2)
-//                            + " " + result.getInt(3) + " " + result.getInt(4));
-//                }
             } else if (table.equals(dateTable)) {
                 insertDates(psInsert);
-//                result = state.executeQuery(querySql);
-//                while (result.next()) {
-//                    System.out.println(result.getInt(1) + " " + result.getString(2) + " "
-//                            + result.getInt(3) + " " + MONTHS[result.getInt(4)] + " "
-//                            + result.getInt(5) + " " + DAYS[result.getInt(6)] + " " + result.getInt(7));
-//                }
             }
             // Release the resources
             if (psInsert != null) {
@@ -279,11 +376,16 @@ public class Derby {
         String table;
         String[] sql;
 
+        // reference:
+        // the code structure is copied and modified from Sample program WwdEmbedded.java
+        // under directory: ./derby/demo/programs/workingwithderby/WwdEmbedded.java
         try (
+                // auto closable, no need to include finally block to release resources
                 Connection conn = DriverManager.getConnection(connectionUrl);
                 Statement state = conn.createStatement()
         ) {
-            System.out.println("Connected to database " + dbName);
+            // use std_err as required
+            System.err.println("Connected to database " + dbName);
             // control transactions manually, autocommit is on by default in JDBC
             conn.setAutoCommit(false);
             // drop the table if exists
@@ -291,7 +393,8 @@ public class Derby {
                 table = tables[i];
                 dropTable(table, conn, state);
             }
-            System.out.println("Job begins: loading data into Derby ...");
+            // use std_err as required
+            System.err.println("Job begins: loading data into Derby ...");
             long start = System.currentTimeMillis();
             for (int i = 0; i < number; i++) {
                 table = tables[i];
@@ -299,17 +402,22 @@ public class Derby {
                 createAndInsert(conn, state, table, sql);
             }
             long end = System.currentTimeMillis();
+            // calculate the total time taken for loading data into Derby DB
             long duration = end - start;
-            System.out.printf("Job ends: loading data int Derby completes ... time taken %d millisecond = %.2f seconds%n", duration, duration / 1000f);
+            // use std_err as required
+            System.err.printf("Job ends: loading data int Derby completes ... time taken %d millisecond = %.2f seconds%n", duration, duration / 1000f);
             //  commit the transaction: any changes will be persisted to the database now
             conn.commit();
-            System.out.println("Committed the transaction");
+            // use std_err as required
+            System.err.println("Committed the transaction");
+            System.err.println("Closed connection");
 
-            System.out.println("Closed connection");
-
-            //  DATABASE SHUTDOWN SECTION
-            //  In embedded mode, an application should shut down Derby
-            //  Shutdown throws the XJ015 exception to confirm success
+            // reference:
+            // the code structure is copied and modified from Sample program WwdEmbedded.java
+            // under directory: ./derby/demo/programs/workingwithderby/WwdEmbedded.java
+            // DATABASE SHUTDOWN SECTION
+            // In embedded mode, an application should shut down Derby
+            // Shutdown throws the XJ015 exception to confirm success
             boolean gotSqlExc = false;
             try {
                 DriverManager.getConnection(protocol + ";shutdown=true");
@@ -320,21 +428,27 @@ public class Derby {
                 }
             }
             if (!gotSqlExc) {
-                System.out.println("Database did not shut down normally");
+                System.err.println("Database did not shut down normally");
             } else {
-                System.out.println("Database shut down normally");
+                System.err.println("Database shut down normally");
             }
             //  Beginning of the primary catch block: prints stack trace
         } catch (Throwable e) {
             //  Catch all exceptions and pass them to
             //  the Throwable.printStackTrace method
-            System.out.println(" . . . exception thrown:");
-            e.printStackTrace(System.out);
+            System.err.println(" . . . exception thrown:");
+            e.printStackTrace(System.err);
             System.exit(1);
         }
     }
 
+    /**
+     * initialise instance variables for Derby database creation and insertion
+     * initialise list containers to load data from CSV file to memory container
+     */
     private void init() {
+        // initialise months and days array for later conversion, e.g. "January" -> 1, "Monday" -> 1
+        // index 0 will be ignored, conversion starts from index 1
         months = new String[]{"", "January", "February", "March", "April", "May", "June",
                 "July", "August", "September", "October", "November", "December"};
         days = new String[]{"", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"};
@@ -356,6 +470,7 @@ public class Derby {
         };
 
         countTable = "COUNT";
+        // for count table, apply foreign key constraints reference from sensor and datetime table
         String[] countSql = new String[]{
                 String.format("create table %s (id int not null, counts int not null, dateId int not null,"
                         + "sensorId int not null, primary key (id), foreign key (dateId) references %s (id),"
@@ -363,15 +478,14 @@ public class Derby {
                 String.format("insert into %s (id, counts, dateId, sensorId) values (?, ?, ?, ?)", countTable),
                 String.format("select id, counts, dateId, sensorId from %s", countTable)
         };
-
         tables = new String[]{dateTable, sensorTable, countTable};
         sqlList = new String[][]{dateSql, sensorSql, countSql};
 
+        // initialise the list and set containers
+        // usage for set is to eliminate data duplicates
         countList = new ArrayList<>();
-
         dateTimeList = new ArrayList<>();
         dateIdSet = new HashSet<>();
-
         sensorList = new ArrayList<>();
         sensorIdSet = new HashSet<>();
     }

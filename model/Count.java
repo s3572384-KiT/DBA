@@ -40,7 +40,7 @@ public class Count {
 
     @Override
     public String toString() {
-        return String.format("id: %d, datetime: %d, sensor: %d ,counts: %d\n",
+        return String.format("id: %d, datetime: %d, sensor: %d, hourly counts: %d\n",
                 id, dateTimeId, sensorId, hourlyCount);
     }
 }
