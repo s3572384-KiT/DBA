@@ -119,10 +119,12 @@ public class Derby {
             return;
         }
         final String path = args[0];
+        System.err.println("Derby program starts ...");
         // initialise list containers for counts, datetime and sensor
         derby.init();
         // loading data from CSV file to memory then store into Derby Database
         derby.loadDate(path);
+        System.err.println("Derby program finished ...");
     }
 
     /**
@@ -218,7 +220,7 @@ public class Derby {
             sensorList.sort((o1, o2) -> o1.getId() - o2.getId());
             countList.sort((o1, o2) -> o1.getId() - o2.getId());
             // use std_err as required
-            System.err.println("all the data loaded into the memory completes ...");
+            System.err.println("all the data from CSV file loaded into the memory completes ...");
 
             // import all list containers into Derby DB
             importToDerby();
@@ -394,7 +396,7 @@ public class Derby {
                 dropTable(table, conn, state);
             }
             // use std_err as required
-            System.err.println("Job begins: loading data into Derby ...");
+            System.err.println("Job begins: loading data from memory into Derby ...");
             long start = System.currentTimeMillis();
             for (int i = 0; i < number; i++) {
                 table = tables[i];
