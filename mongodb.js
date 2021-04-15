@@ -230,36 +230,41 @@ const run = async () => {
 	let sensorCol = "sensor";
 	let countCol = "count";
 
-	// connect to mongodb
-	await client.connect();
-	const database = client.db(db);
-	dateTimeCol = database.collection(dateTimeCol);
-	sensorCol = database.collection(sensorCol);
-	countCol = database.collection(countCol);
-	// this option prevents additional documents from being inserted if one fails
-	const options = { ordered: true };
+	try {
+		// connect to mongodb
+		await client.connect();
+		const database = client.db(db);
+		dateTimeCol = database.collection(dateTimeCol);
+		sensorCol = database.collection(sensorCol);
+		countCol = database.collection(countCol);
+		// this option prevents additional documents from being inserted if one fails
+		const options = { ordered: true };
 
-	const dateTimeResult = await dateTimeCol.insertMany(dateTimeList, options);
-	// , (err, res) => {
-	// 	if (err) throw err;
-	// 	console.log(`Inserted dateTimeList: ${res.insertedCount} rows`);
-	// });
-	console.log(`date time: ${dateTimeResult.insertedCount} documents were inserted`);
-	const sensorResult = await sensorCol.insertMany(sensorList, options);
-	// , (err, res) => {
-	// 	if (err) throw err;
-	// 	console.log(`Inserted sensorList: ${res.insertedCount} rows`);
-	// });
-	console.log(`sensor: ${sensorResult.insertedCount} documents were inserted`);
-	const countResult = await countCol.insertMany(countList, options);
-	// , (err, res) => {
-	// 	if (err) throw err;
-	// 	console.log(`Inserted countList: ${res.insertedCount} rows`);
-	// });
-	console.log(`count: ${countResult.insertedCount} documents were inserted`);
-	// close connection
-	await client.close();
-	reportSummary();
+		const dateTimeResult = await dateTimeCol.insertMany(dateTimeList, options);
+		// , (err, res) => {
+		// 	if (err) throw err;
+		// 	console.log(`Inserted dateTimeList: ${res.insertedCount} rows`);
+		// });
+		console.log(`date time: ${dateTimeResult.insertedCount} documents were inserted`);
+		const sensorResult = await sensorCol.insertMany(sensorList, options);
+		// , (err, res) => {
+		// 	if (err) throw err;
+		// 	console.log(`Inserted sensorList: ${res.insertedCount} rows`);
+		// });
+		console.log(`sensor: ${sensorResult.insertedCount} documents were inserted`);
+		const countResult = await countCol.insertMany(countList, options);
+		// , (err, res) => {
+		// 	if (err) throw err;
+		// 	console.log(`Inserted countList: ${res.insertedCount} rows`);
+		// });
+		console.log(`count: ${countResult.insertedCount} documents were inserted`);
+	} catch (err) {
+		throw new Error('Unable to Connect to Database')
+	} finally {
+		// close connection
+		await client.close();
+		reportSummary();
+	};
 }
 
 const doInsert = async (client, dateTimeList, sensorList, countList) => {
