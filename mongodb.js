@@ -62,12 +62,13 @@ const addToSensorList = (sensorId, sensorName, countId) => {
 		sensorList.push({
 			id: sensorId,
 			name: sensorName,
-			counts: [countId]
+			// counts: [countId]
 		});
-	} else {
-		let idx = sensorMap.get(sensorId);
-		sensorList[idx].counts.push(countId);
 	}
+	// else {
+	// 	let idx = sensorMap.get(sensorId);
+	// 	sensorList[idx].counts.push(countId);
+	// }
 }
 
 const addToDateTimeList = (dateId, datetime, year, month, mDate, day, time, countId) => {
@@ -81,12 +82,13 @@ const addToDateTimeList = (dateId, datetime, year, month, mDate, day, time, coun
 			"mDate": mDate,
 			"day": day,
 			"time": time,
-			counts: [countId]
+			// counts: [countId]
 		});
-	} else {
-		let idx = dateTimeMap.get(dateId);
-		dateTimeList[idx].counts.push(countId);
 	}
+	// else {
+	// 	let idx = dateTimeMap.get(dateId);
+	// 	dateTimeList[idx].counts.push(countId);
+	// }
 }
 
 const addToCountList = (countId, hourlyCounts, dateId, sensorId) => {
