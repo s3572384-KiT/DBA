@@ -1,7 +1,5 @@
 package model;
 
-import java.util.Objects;
-
 /**
  * Sensor Entity
  * important - code reference:
@@ -26,23 +24,6 @@ public class Sensor {
 
     public String getName() {
         return name;
-    }
-
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) {
-            return true;
-        }
-        if (o == null || getClass() != o.getClass()) {
-            return false;
-        }
-        Sensor sensor = (Sensor) o;
-        return id == sensor.id && Objects.equals(name, sensor.name);
-    }
-
-    @Override
-    public int hashCode() {
-        return Objects.hash(id, name);
     }
 
     @Override
