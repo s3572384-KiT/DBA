@@ -26,13 +26,13 @@ for (let i = 1; i < days.length; ++i) {
 	dayMap.set(days[i], i);
 }
 
-monthMap.forEach((value, key) => {
-	console.log(key, value);
-});
+// monthMap.forEach((value, key) => {
+// 	console.log(key, value);
+// });
 
-dayMap.forEach((value, key) => {
-	console.log(key, value);
-});
+// dayMap.forEach((value, key) => {
+// 	console.log(key, value);
+// });
 
 let countId, dateId, sensorId;
 let dateTime, year, month, mDate, day, time, sensorName, hourlyCounts;
@@ -110,7 +110,7 @@ let csvStream = fastcsv
 	.on("data", data => {
 		if (count == 0) {
 			count += 1;
-			console.log(data);
+			// console.log(data);
 		} else {
 			// extract attributes
 			countId = data[countIdIdx].trim();
