@@ -22,23 +22,28 @@ public class BPlusTreeTest {
         System.out.println("Creating BPlusTree is end,the BPlus tree's height is " + bPlusTree.getHeight() + ", elapsed time is " + (end - start));
 //        bPlusTree.printBPlusTree();
 
-        //search by BPlus tree
+        //search by B+ tree
         start = System.currentTimeMillis();
         Count result =  bPlusTree.get(17);
         end = System.currentTimeMillis();
-        System.out.println("BPlus query elapsed time is " + (end - start) + " ms, result is " +result);
+        System.out.println("Query by B+ tree, elapsed time is " + (end - start) + " ms, result is " +result);
 
-        //search by traverse
+        //search by full scan
         start = System.currentTimeMillis();
+        List<Count> resList = fullScan(countList);
+        end = System.currentTimeMillis();
+        System.out.println("Query by full scan, elapsed time is " + (end - start) + " ms, result size is " +resList.size());
+
+    }
+
+    public static List<Count> fullScan(List<Count> countList){
         List<Count> resList = new ArrayList<>();
         for(Count count : countList){
             if(count.id == 17){
                 resList.add(count);
             }
         }
-        end = System.currentTimeMillis();
-        System.out.println("Full query elapsed time is " + (end - start) + " ms, result size is " +resList.size());
-
+        return resList;
     }
 
     public static BPlusTree<String,Count> createBPlusTreeBySensorName(List<Count> countList, int order){
