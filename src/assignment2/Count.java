@@ -31,8 +31,6 @@ public class Count {
 
     @Override
     public String toString() {
-        return "Count{" +
-                "id=" + id +
-                '}';
+        return String.valueOf(id);
     }
 }
