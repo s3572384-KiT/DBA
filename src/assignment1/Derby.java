@@ -1,6 +1,8 @@
-import model.Count;
-import model.DateTime;
-import model.Sensor;
+package assignment1;
+
+import assignment1.model.Count;
+import assignment1.model.DateTime;
+import assignment1.model.Sensor;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -16,7 +18,7 @@ import java.util.Set;
  * important - code reference:
  * https://www.tutorialspoint.com/java/java_documentation.htm
  * <p>
- * Loading data from CSV file then writing into Derby DB
+ * Loading data from CSV file then writing into assignment1.Derby DB
  *
  * @author Kit T
  * @version 1.0
@@ -106,7 +108,7 @@ public class Derby {
     }
 
     /**
-     * Derby Database loading program driver function, program entry point
+     * assignment1.Derby Database loading program driver function, program entry point
      *
      * @param args command line arguments - an array of String arguments
      */
@@ -119,17 +121,17 @@ public class Derby {
             return;
         }
         final String path = args[0];
-        System.err.println("Derby program starts ...");
+        System.err.println("assignment1.Derby program starts ...");
         // initialise list containers for counts, datetime and sensor
         derby.init();
-        // loading data from CSV file to memory then store into Derby Database
+        // loading data from CSV file to memory then store into assignment1.Derby Database
         derby.loadDate(path);
-        System.err.println("Derby program finished ...");
+        System.err.println("assignment1.Derby program finished ...");
     }
 
     /**
      * Verify if the command line arguments meet the requirement
-     * standard format: java Derby datafile
+     * standard format: java assignment1.Derby datafile
      * args-1: path for datafile
      *
      * @param args an array of String arguments
@@ -141,8 +143,8 @@ public class Derby {
         // if 1 condition met, a) no file path provided; b) file does not exist
         if (args == null || args.length < required || !(new File(args[0]).exists())) {
             System.err.println("insufficient number of arguments OR invalid arguments OR CSV file not exist");
-            System.err.println("command to execute the program: java Derby datafile");
-            System.err.println("example: java Derby file.csv");
+            System.err.println("command to execute the program: java assignment1.Derby datafile");
+            System.err.println("example: java assignment1.Derby file.csv");
             return false;
         }
         return true;
@@ -215,14 +217,14 @@ public class Derby {
                 addToCountList(countId, hourlyCounts, dateId, sensorId);
             }
 
-            // sort all the lists in ascending order before importing to Derby, use comparator mechanism
+            // sort all the lists in ascending order before importing to assignment1.Derby, use comparator mechanism
             dateTimeList.sort((o1, o2) -> o1.getId() - o2.getId());
             sensorList.sort((o1, o2) -> o1.getId() - o2.getId());
             countList.sort((o1, o2) -> o1.getId() - o2.getId());
             // use std_err as required
             System.err.println("all the data from CSV file loaded into the memory completes ...");
 
-            // import all list containers into Derby DB
+            // import all list containers into assignment1.Derby DB
             importToDerby();
         } catch (IOException e) {
             e.printStackTrace();
@@ -230,7 +232,7 @@ public class Derby {
     }
 
     /**
-     * Insert all the dates from date list to Derby DB
+     * Insert all the dates from date list to assignment1.Derby DB
      *
      * @param psInsert prepared statement for insertion
      * @throws SQLException SQL exception
@@ -249,7 +251,7 @@ public class Derby {
     }
 
     /**
-     * Insert all the sensors from sensor list to Derby DB
+     * Insert all the sensors from sensor list to assignment1.Derby DB
      *
      * @param psInsert prepared statement for insertion
      * @throws SQLException SQL exception
@@ -263,7 +265,7 @@ public class Derby {
     }
 
     /**
-     * Insert all the counts from counts list to Derby DB
+     * Insert all the counts from counts list to assignment1.Derby DB
      *
      * @param psInsert prepared statement for insertion
      * @throws SQLException SQL exception
@@ -365,7 +367,7 @@ public class Derby {
     /**
      * important code reference:
      * https://stackoverflow.com/questions/18593019/if-exists-not-recognized-in-derby
-     * partial code copied and modified from Derby installation directory Sample program WwdEmbedded.java
+     * partial code copied and modified from assignment1.Derby installation directory Sample program WwdEmbedded.java
      * under directory: ./derby/demo/programs/workingwithderby/WwdEmbedded.java
      */
     private void importToDerby() {
@@ -396,7 +398,7 @@ public class Derby {
                 dropTable(table, conn, state);
             }
             // use std_err as required
-            System.err.println("Job begins: loading data from memory into Derby ...");
+            System.err.println("Job begins: loading data from memory into assignment1.Derby ...");
             long start = System.currentTimeMillis();
             for (int i = 0; i < number; i++) {
                 table = tables[i];
@@ -404,10 +406,10 @@ public class Derby {
                 createAndInsert(conn, state, table, sql);
             }
             long end = System.currentTimeMillis();
-            // calculate the total time taken for loading data into Derby DB
+            // calculate the total time taken for loading data into assignment1.Derby DB
             long duration = end - start;
             // use std_err as required
-            System.err.printf("Job ends: loading data int Derby completes ... time taken %d millisecond = %.2f seconds%n", duration, duration / 1000f);
+            System.err.printf("Job ends: loading data int assignment1.Derby completes ... time taken %d millisecond = %.2f seconds%n", duration, duration / 1000f);
             //  commit the transaction: any changes will be persisted to the database now
             conn.commit();
             // use std_err as required
@@ -418,7 +420,7 @@ public class Derby {
             // the code structure is copied and modified from Sample program WwdEmbedded.java
             // under directory: ./derby/demo/programs/workingwithderby/WwdEmbedded.java
             // DATABASE SHUTDOWN SECTION
-            // In embedded mode, an application should shut down Derby
+            // In embedded mode, an application should shut down assignment1.Derby
             // Shutdown throws the XJ015 exception to confirm success
             boolean gotSqlExc = false;
             try {
@@ -445,7 +447,7 @@ public class Derby {
     }
 
     /**
-     * initialise instance variables for Derby database creation and insertion
+     * initialise instance variables for assignment1.Derby database creation and insertion
      * initialise list containers to load data from CSV file to memory container
      */
     private void init() {

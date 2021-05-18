@@ -1,4 +1,4 @@
-package model;
+package assignment1.model;
 
 /**
  * DateTime Entity
