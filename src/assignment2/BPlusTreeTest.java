@@ -36,6 +36,11 @@ public class BPlusTreeTest {
 
     }
 
+    /**
+     * full scan in count list
+     * @param countList count list
+     * @return matched count list
+     */
     public static List<Count> fullScan(List<Count> countList){
         List<Count> resList = new ArrayList<>();
         for(Count count : countList){
@@ -46,27 +51,17 @@ public class BPlusTreeTest {
         return resList;
     }
 
-    public static BPlusTree<String,Count> createBPlusTreeBySensorName(List<Count> countList, int order){
-        BPlusTree<String, Count> bPlusTree = new BPlusTree<>(order);
-        countList.forEach(count -> bPlusTree.insertOrUpdate(count.sensorName,count));
-        return bPlusTree;
-    }
 
+    /**
+     * create index in id
+     * @param countList count lsit
+     * @param order order of B+ Tree
+     * @return B+ tree
+     */
     public static BPlusTree<Integer,Count> createBPlusTreeById(List<Count> countList, int order){
         BPlusTree<Integer, Count> bPlusTree = new BPlusTree<>(order);
         countList.forEach(count -> bPlusTree.insertOrUpdate(count.id,count));
         return bPlusTree;
     }
 
-    public static BPlusTree<Integer,Count> createBPlusTreeBySensorId(List<Count> countList, int order){
-        BPlusTree<Integer, Count> bPlusTree = new BPlusTree<>(order);
-        countList.forEach(count -> bPlusTree.insertOrUpdate(count.sensorId,count));
-        return bPlusTree;
-    }
-
-    public static BPlusTree<Integer,Count> createBPlusTreeByTime(List<Count> countList, int order){
-        BPlusTree<Integer, Count> bPlusTree = new BPlusTree<>(order);
-        countList.forEach(count -> bPlusTree.insertOrUpdate(count.time,count));
-        return bPlusTree;
-    }
 }
