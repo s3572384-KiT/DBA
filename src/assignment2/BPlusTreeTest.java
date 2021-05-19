@@ -12,21 +12,23 @@ public class BPlusTreeTest {
         }
         //read data from csv file
         System.out.println("Reading data from csv file is started...");
-        List<Count> countList = CsvUtils.readCountFromCsv(csvFile,100);
-        System.out.println("Reading data from csv file is end, the rows is " + countList.size());
+        long start = System.currentTimeMillis();
+        List<Count> countList = CsvUtils.readCountFromCsv(csvFile,-1);
+        long end = System.currentTimeMillis();
+        System.out.println("Reading data from csv file is end, the rows is " + countList.size() + ", elapsed time is " + (end - start));
         //count id used to be index
         System.out.println("Creating B+ tree is started...");
-        long start = System.currentTimeMillis();
-        BPlusTree<Integer,Count> bPlusTree = createBPlusTreeById(countList,10);
-        long end = System.currentTimeMillis();
+        start = System.currentTimeMillis();
+        BPlusTree<Integer,Count> bPlusTree = createBPlusTreeById(countList,5);
+        end = System.currentTimeMillis();
         System.out.println("Creating B+ tree is end,the B+ tree's height is " + bPlusTree.getHeight() + ", elapsed time is " + (end - start));
         //print B+ tree
-        bPlusTree.printBPlusTree();
+//        bPlusTree.printBPlusTree();
 
         int searchId = 2887714;
         //search by B+ tree
         start = System.currentTimeMillis();
-        Count result =  bPlusTree.get(searchId);
+        Count result =  bPlusTree.find(searchId);
         end = System.currentTimeMillis();
         System.out.println("Query by B+ tree, elapsed time is " + (end - start) + " ms, result is " +result);
 

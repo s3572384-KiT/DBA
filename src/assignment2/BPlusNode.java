@@ -9,8 +9,6 @@ public class BPlusNode<K extends Comparable<K>, V> {
 
     /** is it a leaf node */
     protected boolean leaf;
-    /** is it a root node */
-    protected boolean root;
     /** parent node */
     protected BPlusNode<K, V> parent;
     /** previous node of leaf node */
@@ -30,17 +28,12 @@ public class BPlusNode<K extends Comparable<K>, V> {
         }
     }
 
-    public BPlusNode(boolean leaf, boolean root) {
-        this(leaf);
-        this.root = root;
-    }
-
     /**
      * get the matched value by key
      * @param key key
      * @return the matched value
      */
-    public V get(K key) {
+    public V find(K key) {
         //if it's a leaf node
         if (leaf) {
             return binarySearchOnLeafNode(key);
@@ -48,12 +41,12 @@ public class BPlusNode<K extends Comparable<K>, V> {
         // If it's not a leaf node
         // If the key is less than the leftmost key of the node, continue searching along the first child node
         if (key.compareTo(entryList.get(0).getKey()) < 0) {
-            return childrenList.get(0).get(key);
+            return childrenList.get(0).find(key);
             // If the key is greater than or equal to the rightmost key of the node, continue searching along the last child node
         } else if (key.compareTo(entryList.get(entryList.size() - 1).getKey()) >= 0) {
-            return childrenList.get(childrenList.size() - 1).get(key);
-            // Otherwise, continue the search along the previous child node greater than the key
+            return childrenList.get(childrenList.size() - 1).find(key);
         } else {
+            // Otherwise, continue the search along the previous child node greater than the key
             return binarySearchOnNode(key);
         }
     }
@@ -69,14 +62,14 @@ public class BPlusNode<K extends Comparable<K>, V> {
             int mid = low + (high - low) / 2;
             int comp = entryList.get(mid).getKey().compareTo(key);
             if (comp == 0) {
-                return childrenList.get(mid + 1).get(key);
-            } else if (comp < 0) {
-                low = mid + 1;
-            } else {
+                return childrenList.get(mid + 1).find(key);
+            } else if (comp > 0) {
                 high = mid - 1;
+            } else {
+                low = mid + 1;
             }
         }
-        return childrenList.get(low).get(key);
+        return childrenList.get(low).find(key);
     }
 
     /**
@@ -86,63 +79,54 @@ public class BPlusNode<K extends Comparable<K>, V> {
      * @param tree B+ tree
      */
     protected void handleLinkedList(BPlusNode<K,V> left,BPlusNode<K,V> right,BPlusTree<K, V> tree){
-        if (prev != null) {
-            prev.next = left;
-            left.prev = prev;
-        }
         if (next != null) {
             next.prev = right;
             right.next = next;
         }
+
         if (prev == null) {
-            tree.setHead(left);
+            tree.setLeafHead(left);
+        } else {
+            prev.next = left;
+            left.prev = prev;
         }
+
         left.next = right;
         right.prev = left;
-        prev = null;
-        next = null;
+
     }
 
     protected void adjustParentAndChildren(int entryIdx, BPlusNode<K,V> left,BPlusNode<K,V> right,BPlusTree<K,V> tree){
         //If it's not root node
         if (parent != null) {
-            int index = parent.childrenList.indexOf(this);
-            parent.childrenList.remove(this);
             left.parent = parent;
             right.parent = parent;
-            parent.childrenList.add(index, left);
-            parent.childrenList.add(index + 1, right);
+            int index = parent.childrenList.indexOf(this);
             if(entryIdx == 0){
                 parent.entryList.add(index, right.entryList.get(entryIdx));
             }else{
                 parent.entryList.add(index, entryList.get(entryIdx));
             }
-            // delete the key's entry list of the current node
-            // delete the child node reference of the current node
-            entryList = null;
-            childrenList = null;
-
+            parent.childrenList.remove(this);
+            parent.childrenList.add(index, left);
+            parent.childrenList.add(index + 1, right);
             // Parent node insert or update key
             parent.updateInsert(tree);
-            // delete the parent node reference of the current node
-            parent = null;
+
         //else it's root node
         } else {
-            root = false;
+            BPlusNode<K, V> parent = new BPlusNode<>(false);
+            tree.setRootNode(parent);
             tree.setHeight(tree.getHeight() + 1);
-            BPlusNode<K, V> parent = new BPlusNode<>(false, true);
-            tree.setRoot(parent);
             left.parent = parent;
             right.parent = parent;
-            parent.childrenList.add(left);
-            parent.childrenList.add(right);
             if(entryIdx == 0){
                 parent.entryList.add(right.entryList.get(entryIdx));
             }else{
                 parent.entryList.add(entryList.get(entryIdx));
             }
-            entryList = null;
-            childrenList = null;
+            parent.childrenList.add(left);
+            parent.childrenList.add(right);
         }
     }
 
@@ -169,7 +153,7 @@ public class BPlusNode<K extends Comparable<K>, V> {
             //handle linkedList on leaf nodes
             handleLinkedList(left,right,tree);
             // copy the key of the original node to the split new node
-            copy2Nodes(key, value, left, right, tree);
+            splitAndCopyNodes(tree, left, right ,key, value);
             //adjust relationship between children and parent
             adjustParentAndChildren(0,left,right,tree);
             return;
@@ -201,10 +185,10 @@ public class BPlusNode<K extends Comparable<K>, V> {
             if (comp == 0) {
                 childrenList.get(mid + 1).insertOrUpdate(key, value, tree);
                 break;
-            } else if (comp < 0) {
-                low = mid + 1;
-            } else {
+            } else if (comp > 0) {
                 high = mid - 1;
+            } else {
+                low = mid + 1;
             }
         }
         if (low > high) {
@@ -220,19 +204,19 @@ public class BPlusNode<K extends Comparable<K>, V> {
      * @param right new right node
      * @param tree B+ tree
      */
-    private void copy2Nodes(K key, V value, BPlusNode<K, V> left, BPlusNode<K, V> right, BPlusTree<K, V> tree) {
-        // calculate the key's entry list length of the left and right nodes
-        int leftSize = (tree.getOrder() + 1) / 2 + (tree.getOrder() + 1) % 2;
+    private void splitAndCopyNodes(BPlusTree<K, V> tree, BPlusNode<K, V> left, BPlusNode<K, V> right, K key, V value ) {
         // record whether the new node has been inserted
         boolean isInserted = false;
+        // calculate the key's entry list length of the left and right nodes
+        int leftSize = (tree.getOrder() + 1) / 2 + (tree.getOrder() + 1) % 2;
         for (int i = 0; i < entryList.size(); i++) {
             if (leftSize != 0) {
                 leftSize--;
                 // if the inserted value is less than the first, just add to left entry list
                 if (!isInserted && entryList.get(i).getKey().compareTo(key) > 0) {
-                    left.entryList.add(new AbstractMap.SimpleEntry<>(key, value));
-                    isInserted = true;
                     i--;
+                    isInserted = true;
+                    left.entryList.add(new AbstractMap.SimpleEntry<>(key, value));
                 } else {
                     //else,move the original element to the left entry list
                     left.entryList.add(entryList.get(i));
@@ -240,9 +224,9 @@ public class BPlusNode<K extends Comparable<K>, V> {
             } else {
                 // if the inserted value is less than the first, just add to left entry list
                 if (!isInserted && entryList.get(i).getKey().compareTo(key) > 0) {
-                    right.entryList.add(new AbstractMap.SimpleEntry<>(key, value));
-                    isInserted = true;
                     i--;
+                    isInserted = true;
+                    right.entryList.add(new AbstractMap.SimpleEntry<>(key, value));
                 } else {
                     right.entryList.add(entryList.get(i));
                 }
@@ -261,28 +245,25 @@ public class BPlusNode<K extends Comparable<K>, V> {
         // if the number of child nodes exceeds the order, the node needs to be split
         if (childrenList.size() > tree.getOrder()) {
             // the node will be split into left and right node
-            BPlusNode<K, V> left = new BPlusNode<>(false);
-            BPlusNode<K, V> right = new BPlusNode<>(false);
+            BPlusNode<K, V> left = new BPlusNode<>(false), right = new BPlusNode<>(false);
             // calculate the length of the child nodes of the left and right nodes
-            int leftSize = (tree.getOrder() + 1) / 2 + (tree.getOrder() + 1) % 2;
-            int rightSize = (tree.getOrder() + 1) / 2;
+            int leftSize = (tree.getOrder() + 1) / 2 + (tree.getOrder() + 1) % 2, rightSize = (tree.getOrder() + 1) / 2;
             // copy the child node to the split new node, and update the key
 
             for (int i = 0; i < leftSize; i++) {
                 left.childrenList.add(childrenList.get(i));
                 childrenList.get(i).parent = left;
+                if(i < leftSize - 1){
+                    left.entryList.add(entryList.get(i));
+                }
             }
 
             for (int i = 0; i < rightSize; i++) {
                 right.childrenList.add(childrenList.get(leftSize + i));
                 childrenList.get(leftSize + i).parent = right;
-            }
-
-            for (int i = 0; i < leftSize - 1; i++) {
-                left.entryList.add(entryList.get(i));
-            }
-            for (int i = 0; i < rightSize - 1; i++) {
-                right.entryList.add(entryList.get(leftSize + i));
+                if(i < rightSize - 1){
+                    right.entryList.add(entryList.get(leftSize + i));
+                }
             }
             adjustParentAndChildren(leftSize - 1,left,right,tree);
         }
@@ -300,10 +281,10 @@ public class BPlusNode<K extends Comparable<K>, V> {
             int comp = entryList.get(mid).getKey().compareTo(key);
             if (comp == 0) {
                 return mid;
-            } else if (comp < 0) {
-                low = mid + 1;
-            } else {
+            } else if (comp > 0) {
                 high = mid - 1;
+            } else {
+                low = mid + 1;
             }
         }
         return -1;
@@ -317,14 +298,14 @@ public class BPlusNode<K extends Comparable<K>, V> {
     protected V binarySearchOnLeafNode(K key){
         int low = 0, high = entryList.size() - 1;
         while (low <= high) {
-            int mid = (low + high) / 2;
+            int mid = low + (high - low) / 2;
             int comp = entryList.get(mid).getKey().compareTo(key);
             if (comp == 0) {
                 return entryList.get(mid).getValue();
-            } else if (comp < 0) {
-                low = mid + 1;
-            } else {
+            } else if (comp > 0) {
                 high = mid - 1;
+            } else {
+                low = mid + 1;
             }
         }
         //not found,return null
@@ -356,34 +337,16 @@ public class BPlusNode<K extends Comparable<K>, V> {
         }
     }
 
-    @Override
-    public String toString() {
-        StringBuilder sb = new StringBuilder();
-        sb.append("isRoot: ");
-        sb.append(root);
-        sb.append(", ");
-        sb.append("isLeaf: ");
-        sb.append(leaf);
-        sb.append(", ");
-        sb.append("keys: ");
-        for (Map.Entry<K, V> entry : entryList) {
-            sb.append(entry.getKey());
-            sb.append(", ");
-        }
-        sb.append(", ");
-        return sb.toString();
-    }
-
-    public void printBPlusTree(int index) {
+    public void printBPlusTree(int index,StringBuilder sb) {
         if (this.leaf) {
-            System.out.print("Level is " + index + ",leaf node，keys is ");
-            for (Map.Entry<K, V> entry : entryList) System.out.print(entry + " ");
-            System.out.println();
+            sb.append("Level is ").append(index).append(",leaf node，keys is ");
+            for (Map.Entry<K, V> entry : entryList) sb.append(entry).append(" ");
+            sb.append("\n");
         } else {
-            System.out.print("Level is " + index + ",not leaf node，keys is ");
-            for (Map.Entry<K, V> entry : entryList) System.out.print(entry.getKey() + " ");
-            System.out.println();
-            for (BPlusNode<K, V> child : childrenList) child.printBPlusTree(index + 1);
+            sb.append("Level is ").append(index).append(",not leaf node，keys is ");
+            for (Map.Entry<K, V> entry : entryList) sb.append(entry.getKey()).append(" ");
+            sb.append("\n");
+            for (BPlusNode<K, V> child : childrenList) child.printBPlusTree(index + 1,sb);
         }
     }
 }
