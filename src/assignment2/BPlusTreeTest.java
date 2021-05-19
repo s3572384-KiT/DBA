@@ -7,13 +7,15 @@ public class BPlusTreeTest {
 
     public static void main(String[] args) {
         String csvFile = "count.csv";
-        if(args.length > 0){
+        int searchId = 2887714;
+        if(args.length == 2){
             csvFile = args[0];
+            searchId = Integer.parseInt(args[1]);
         }
         //read data from csv file
         System.out.println("Reading data from csv file is started...");
         long start = System.currentTimeMillis();
-        List<Count> countList = CsvUtils.readCountFromCsv(csvFile,-1);
+        List<Count> countList = CsvUtils.readCountFromCsv(csvFile,40);
         long end = System.currentTimeMillis();
         System.out.println("Reading data from csv file is end, the rows is " + countList.size() + ", elapsed time is " + (end - start));
         //count id used to be index
@@ -23,9 +25,9 @@ public class BPlusTreeTest {
         end = System.currentTimeMillis();
         System.out.println("Creating B+ tree is end,the B+ tree's height is " + bPlusTree.getHeight() + ", elapsed time is " + (end - start));
         //print B+ tree
-//        bPlusTree.printBPlusTree();
+        bPlusTree.printBPlusTree();
 
-        int searchId = 2887714;
+
         //search by B+ tree
         start = System.currentTimeMillis();
         Count result =  bPlusTree.find(searchId);

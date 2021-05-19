@@ -24,13 +24,11 @@ public class BPlusTree<K extends Comparable<K>, V> {
     public void setRootNode(BPlusNode<K, V> root) {
         this.root = root;
     }
-
     public void printBPlusTree() {
         StringBuilder sb = new StringBuilder();
         this.root.printBPlusTree(0,sb);
         System.out.print(sb);
     }
-
     public int getHeight() {
         return height;
     }
@@ -40,11 +38,9 @@ public class BPlusTree<K extends Comparable<K>, V> {
     public void setHeight(int height) {
         this.height = height;
     }
-
     public V find(K key) {
         return root.find(key);
     }
-
     public void insertOrUpdate(K key, V value) {
         root.insertOrUpdate(key, value, this);
     }
