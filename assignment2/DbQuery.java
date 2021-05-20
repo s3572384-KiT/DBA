@@ -1,6 +1,7 @@
 import java.io.*;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
+import java.util.Scanner;
 
 /**
  * Querying data from heap.size file
@@ -242,8 +243,16 @@ public class DbQuery {
 
         // extract the search text and page size information from command line
         System.out.println("DB query program starts ...");
-        doSearch(searchText, pageSize);
-        find(Integer.parseInt(searchText),pageSize);
+        Scanner scanner = new Scanner(System.in);
+        while(true){
+            System.out.println("Please input id to search,eg:2887932,input 'stop' to stop this program");
+            if("stop".equalsIgnoreCase(searchText)){
+                break;
+            }
+            searchText = scanner.nextLine();
+            doSearch(searchText, pageSize);
+            find(Integer.parseInt(searchText),pageSize);
+        }
         System.out.println("DB query program finished ...");
     }
 }
