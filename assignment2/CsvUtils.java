@@ -1,4 +1,4 @@
-package assignment2;
+
 
 import java.io.BufferedReader;
 import java.io.FileReader;
@@ -53,6 +53,7 @@ public class CsvUtils {
             }
         } catch (IOException e) {
             e.printStackTrace();
+            System.exit(1);
         }
         return countList;
     }

@@ -1,4 +1,4 @@
-package assignment2;
+
 
 import java.util.AbstractMap;
 import java.util.ArrayList;
@@ -61,10 +61,10 @@ public class BPlusNode<K extends Comparable<K>, V> {
         int low = 0, high = entryList.size() - 1;
         while (low <= high) {
             int mid = low + (high - low) / 2;
-            int comp = entryList.get(mid).getKey().compareTo(key);
-            if (comp == 0) {
+            int res = key.compareTo(entryList.get(mid).getKey());
+            if (res == 0) {
                 return childrenList.get(mid + 1).find(key);
-            } else if (comp > 0) {
+            } else if (res < 0) {
                 high = mid - 1;
             } else {
                 low = mid + 1;
@@ -185,7 +185,7 @@ public class BPlusNode<K extends Comparable<K>, V> {
             if (res == 0) {
                 childrenList.get(mid + 1).insertOrUpdate(key, value, tree);
                 break;
-            } else if (res > 0) {
+            } else if (res < 0) {
                 high = mid - 1;
             } else {
                 low = mid + 1;
@@ -281,7 +281,7 @@ public class BPlusNode<K extends Comparable<K>, V> {
             int res = key.compareTo(entryList.get(mid).getKey());
             if (res == 0) {
                 return mid;
-            } else if (res > 0) {
+            } else if (res < 0) {
                 high = mid - 1;
             } else {
                 low = mid + 1;
@@ -302,7 +302,7 @@ public class BPlusNode<K extends Comparable<K>, V> {
             int res = key.compareTo(entryList.get(mid).getKey());
             if (res == 0) {
                 return entryList.get(mid).getValue();
-            } else if (res > 0) {
+            } else if (res < 0) {
                 high = mid - 1;
             } else {
                 low = mid + 1;
@@ -345,9 +345,9 @@ public class BPlusNode<K extends Comparable<K>, V> {
                 entryList.get(mid).setValue(value);
                 break;
             } else if (res < 0) {
-                low = mid + 1;
-            } else {
                 high = mid - 1;
+            } else {
+                low = mid + 1;
             }
         }
         if (low > high) {
