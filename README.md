@@ -8,12 +8,14 @@ If the key is duplicated, the old key and value will be replaced by the new key 
 
 2.Second, compile the source code files
 
-`javac assignment2/*.java`
+`cd assignment2`
+
+`javac *.java`
 
 3.Then, specify the heap file and run B+ tree test file
-`cd assignment2`
-`java BPlusTreeTest heap.40960`
 
-Note: `heap.40960` can be replaced with your own heap file path. 
+`java DbQuery ../heap.40960`
+
+Note: `../heap.40960` can be replaced with your own heap file path. 
 
 4.Finally, you will get some information from this running.

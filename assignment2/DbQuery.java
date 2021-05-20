@@ -16,6 +16,8 @@ public class DbQuery {
 
     static BPlusTree<Integer, Long> tree = new BPlusTree<>(100);
 
+    static String heapPath = "heap.40960";
+
     /**
      * Verify if the command line arguments meet the requirement
      * <p>
@@ -67,7 +69,7 @@ public class DbQuery {
      * @param pageSize page size from command line arguments
      */
     private static void doSearch(String text, int pageSize) {
-        String file = String.format("heap.%d", pageSize);
+        String file = heapPath;
         Charset charset = StandardCharsets.UTF_8;
         try (InputStream inputStream = new FileInputStream(file)) {
             byte[] buffer = new byte[pageSize];
@@ -132,6 +134,7 @@ public class DbQuery {
             summaryReport(matchCount, duration);
         } catch (IOException e) {
             e.printStackTrace();
+            System.exit(1);
         }
     }
 
@@ -142,7 +145,7 @@ public class DbQuery {
 
 
     public static void readRecordSkip(long n,int pageSize,String text) {
-        String file = String.format("heap.%d", pageSize);
+        String file = heapPath;
         Charset charset = StandardCharsets.UTF_8;
         byte[] buffer = new byte[pageSize];
         byte[] record = new byte[Record.size];
@@ -228,18 +231,16 @@ public class DbQuery {
      * @param args command line arguments - an array of String arguments
      */
     static public void main(String... args) {
-        // verify arguments
-        // if invalid, then print error message and exit program when invalid args provided
-//        if (!verifyArgs(args)) {
-//            return;
-//        }
         String searchText;
-        int pageSize;
+        int pageSize = 40960;
         // can be used for command line arguments
         searchText = "2887932";
+        if(args.length > 0){
+            heapPath = args[0];
+            pageSize = Integer.parseInt(heapPath.substring(heapPath.indexOf("heap") + 5));
+        }
 
         // extract the search text and page size information from command line
-        pageSize = 40960;
         System.out.println("DB query program starts ...");
         doSearch(searchText, pageSize);
         find(Integer.parseInt(searchText),pageSize);
